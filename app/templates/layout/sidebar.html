@@ -1,0 +1,26 @@
+<div class="col-auto col-md-3 col-xl-2 sidebar">
+    <div class="d-flex flex-column align-items-center align-items-sm-start text-white min-vh-100 pt-3">
+        <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100" id="menu">
+            <li class="nav-item w-100 my-2">
+                <a href="/home" class="nav-link align-middle text-white">
+                    <i class="fa-solid fa-house me-2"></i>Trang chủ
+                </a>
+            </li>
+
+            {% if current_user.is_authenticated %}
+                <li class="nav-item w-100 my-2">
+                    <a href="/chatbot" class="nav-link align-middle text-white">
+                        <i class="fas fa-robot me-2"></i>Chatbot Tư Vấn
+                    </a>
+                </li>
+
+
+<!--                <li class="nav-item w-100 my-2">-->
+<!--                    <a href="{{ url_for('profile') }}" class="nav-link align-middle text-white">-->
+<!--                        <i class="fa-solid fa-user me-2"></i>Hồ sơ của tôi-->
+<!--                    </a>-->
+<!--                </li>-->
+            {% endif %}
+        </ul>
+    </div>
+</div>

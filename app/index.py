@@ -21,9 +21,14 @@ def common_attr():
 def user_load(user_id):
     return dao_authen.get_info_by_id(user_id)
 
+app.add_url_rule("/", "index_controller", controllers.index_controller)
+app.add_url_rule("/home",'home', controllers.home)
+app.add_url_rule("/login",'login' ,controllers.login ,methods=['GET', 'POST'])
+app.add_url_rule("/logout",'logout_my_user',controllers.logout_my_user , methods=['get'])
 
-
-
+app.add_url_rule("/register", "register", controllers.register, methods=['GET', 'POST'])
+app.add_url_rule("/oauth" , 'login_oauth', controllers.login_oauth)
+app.add_url_rule("/callback" , 'oauth_callback', controllers.oauth_callback)
 if __name__ == '__main__':
 
 

@@ -1,0 +1,100 @@
+{% extends "layout/base_login.html" %}
+
+{% block title %}Đăng Nhập - Hệ Thống Tư Vấn Da Liễu{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <!-- Header với nút đăng ký -->
+        <div class="login-header">
+            <a href="{{ url_for('register') }}" class="btn btn-register">
+                <i class="fa-solid fa-user-plus me-2"></i> Đăng ký
+            </a>
+            <h2 class="login-title">ĐĂNG NHẬP</h2>
+            <p class="login-subtitle">Hệ Thống Tư Vấn Da Liễu Thông Minh</p>
+        </div>
+
+        <!-- Form đăng nhập -->
+        <form method="post" action="/login" class="login-form">
+            {{ form.csrf_token }}
+
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fa-solid fa-user me-2"></i>Tên đăng nhập
+                </label>
+                {{ form.username(class="form-control") }}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fa-solid fa-lock me-2"></i>Mật khẩu
+                </label>
+                {{ form.password(class="form-control") }}
+                <p class="text-warning mt-2" id="warning-caps-lock" hidden="hidden">
+                    <i class="fa-solid fa-circle-exclamation me-2"></i>
+                    Bạn đang bật Caps lock
+                </p>
+            </div>
+
+            {% if mse %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                {{ mse }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-login w-100">
+                <i class="fa-solid fa-right-to-bracket me-2"></i>
+                {{ form.SubmitFieldLogin.label }}
+            </button>
+
+            <!-- Đăng nhập với Google -->
+            <a href="{{ url_for('login_oauth') }}" class="btn btn-google w-100">
+                <i class="fab fa-google me-2"></i> Đăng nhập với Google
+            </a>
+        </form>
+
+        <!-- Footer -->
+        <div class="login-footer">
+            <hr>
+            <p class="footer-text">
+                Nếu bác sĩ chưa có tài khoản?
+                <a href="https://hotro.ou.edu.vn" class="support-link">Vui lòng liên hệ</a>
+                với bệnh viện tại nơi khám hoặc liên hệ đến địa chỉ email
+                <i>supporthealth4444@gmail.com</i> để được hỗ trợ
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const pwInput = document.getElementById("password");
+        const labelWarning = document.getElementById("warning-caps-lock");
+
+        if (pwInput && labelWarning) {
+            pwInput.addEventListener('keyup', (event) => {
+                if (event.getModifierState("CapsLock")) {
+                    labelWarning.removeAttribute("hidden");
+                } else {
+                    labelWarning.setAttribute("hidden", "hidden");
+                }
+            });
+        }
+
+        // Tự động ẩn alert sau 5 giây
+        const alert = document.querySelector('.alert');
+        if (alert) {
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }, 5000);
+        }
+    });
+</script>
+{% endblock %}

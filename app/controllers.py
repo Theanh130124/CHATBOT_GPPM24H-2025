@@ -1,13 +1,13 @@
 
 import uuid
 
-from flask import render_template , redirect , request , url_for  , session , jsonify
+from flask import render_template , redirect , request , url_for  , session,flash, jsonify
 from flask_login import current_user , logout_user , login_required , login_user
 
 from app.models import RoleEnum , User
 from app import app , flow
-from form import LoginForm
-from dao import dao_authen
+from form import LoginForm , RegisterForm
+from dao import dao_authen , dao_user
 from app.extensions import db
 
 import google.oauth2.id_token
@@ -63,124 +63,107 @@ def login_oauth():
     )
     session["state"] = state
     return redirect(authorization_url)
-# def oauth_callback():
-#     # đảm bảo Google trả về state đúng
-#     if request.args.get("state") != session.get("state"):
-#         return "State mismatch!", 400
-#
-#     try:
-#         # lấy token từ Google
-#         flow.fetch_token(authorization_response=request.url)
-#
-#         credentials = flow.credentials
-#         request_session = requests.session()
-#         token_request = google.auth.transport.requests.Request(session=request_session)
-#
-#         # verify id_token
-#         id_info = google.oauth2.id_token.verify_oauth2_token(
-#             id_token=credentials._id_token,
-#             request=token_request,
-#             audience=flow.client_config["client_id"],
-#             clock_skew_in_seconds=10  # cho phép lệch tối đa 10 giây
-#         )
-#
-#         email = id_info.get("email")
-#         name = id_info.get("name")
-#
-#         # kiểm tra user trong DB
-#         user = dao_authen.get_user_by_username(email)
-#         if not user:
-#             user = User(
-#                 username=email,
-#                 email=email,
-#                 password="",  # OAuth không dùng mật khẩu
-#                 role=RoleEnum.PATIENT,
-#                 first_name=name.split(" ")[0] if name else "Google",
-#                 last_name=" ".join(name.split(" ")[1:]) if name and len(name.split()) > 1 else "User",
-#                 phone_number=f"GG-{uuid.uuid4().hex[:8]}",  #SĐT giả
-#                 address="Unknown"
-#             )
-#             db.session.add(user)
-#             db.session.flush()
-#             if user.role == RoleEnum.USER:  #FIX TỚI ĐÂY ====================================
-#                 patient = Patient(
-#                     user_id=user.user_id,
-#                     medical_history_summary="Created from Google OAuth"
-#                 )
-#                 db.session.add(patient)
-#                 # Tạo một HealthRecord trống cho lần đầu khám
-#                 health_record = HealthRecord(
-#                     patient_id=user.user_id,
-#                     record_date=datetime.now().date(),
-#                     symptoms="",
-#                     diagnosis="",
-#                     prescription="",
-#                     notes="Bệnh nhân mới - Hồ sơ được tạo tự động từ OAuth"
-#                 )
-#                 db.session.add(health_record)
-#                 db.session.commit()
-#                 #
-#         login_user(user)
-#
-#         return redirect(url_for("index_controller"))
-#
-#     except Exception as e:
-#         app.logger.error(f"OAuth Callback Error: {e}")
-#
-#         return f"Login failed: {e}", 400
 
-#
-# def register():
-#     form = RegisterForm()
-#     mse = None
-#
-#     if form.validate_on_submit():
-#         username = form.username.data
-#         email = form.email.data
-#         password = form.password.data
-#         first_name = form.first_name.data
-#         last_name = form.last_name.data
-#         phone_number = form.phone_number.data
-#         address = form.address.data
-#         date_of_birth = form.date_of_birth.data
-#         gender = form.gender.data
-#
-#         # Kiểm tra các trường đã tồn tại trước khi tạo user
-#         validation_errors = []
-#
-#         # Kiểm tra username đã tồn tại
-#         if dao_user.check_username_exists(username):
-#             validation_errors.append("Tên đăng nhập đã tồn tại!")
-#
-#         # Kiểm tra email đã tồn tại
-#         if dao_user.check_email_exists(email):
-#             validation_errors.append("Email đã tồn tại!")
-#
-#         # Kiểm tra số điện thoại đã tồn tại
-#         if dao_user.check_phone_exists(phone_number):
-#             validation_errors.append("Số điện thoại đã tồn tại!")
-#
-#         # Nếu có lỗi validation, hiển thị tất cả lỗi
-#         if validation_errors:
-#             mse = " | ".join(validation_errors)
-#         else:
-#             # Tạo user bằng dao_user
-#             new_user = dao_user.create_user_with_role(
-#                 username=username,
-#                 email=email,
-#                 password=password,
-#                 first_name=first_name,
-#                 last_name=last_name,
-#                 phone_number=phone_number,
-#                 address=address,
-#                 date_of_birth=date_of_birth,
-#                 gender=gender
-#             )
-#
-#             if new_user:
-#                 flash("Đăng ký thành công! Hãy đăng nhập.", "success")
-#                 return redirect(url_for("login"))
-#             else:
-#                 mse = "Có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại!"
-#
-#     return render_template("register.html", form=form, mse=mse)
+def oauth_callback():
+    # đảm bảo Google trả về state đúng
+    if request.args.get("state") != session.get("state"):
+        return "State mismatch!", 400
+
+    try:
+        # lấy token từ Google
+        flow.fetch_token(authorization_response=request.url)
+
+        credentials = flow.credentials
+        request_session = requests.session()
+        token_request = google.auth.transport.requests.Request(session=request_session)
+
+        # verify id_token
+        id_info = google.oauth2.id_token.verify_oauth2_token(
+            id_token=credentials._id_token,
+            request=token_request,
+            audience=flow.client_config["client_id"],
+            clock_skew_in_seconds=10  # cho phép lệch tối đa 10 giây
+        )
+
+        email = id_info.get("email")
+        name = id_info.get("name")
+
+        # kiểm tra user trong DB
+        user = dao_authen.get_user_by_username(email)
+        if not user:
+            user = User(
+                username=email,
+                email=email,
+                password="",  # OAuth không dùng mật khẩu
+                role=RoleEnum.USER,
+                first_name=name.split(" ")[0] if name else "Google",
+                last_name=" ".join(name.split(" ")[1:]) if name and len(name.split()) > 1 else "User",
+                phone_number=f"GG-{uuid.uuid4().hex[:8]}",  #SĐT giả
+                address="Unknown"
+            )
+            db.session.add(user)
+            db.session.flush()
+        login_user(user)
+
+        return redirect(url_for("index_controller"))
+
+    except Exception as e:
+        app.logger.error(f"OAuth Callback Error: {e}")
+
+        return f"Login failed: {e}", 400
+
+
+def register():
+    form = RegisterForm()
+    mse = None
+
+    if form.validate_on_submit():
+        username = form.username.data
+        email = form.email.data
+        password = form.password.data
+        first_name = form.first_name.data
+        last_name = form.last_name.data
+        phone_number = form.phone_number.data
+        address = form.address.data
+        date_of_birth = form.date_of_birth.data
+        gender = form.gender.data
+
+
+        validation_errors = []
+
+        # Kiểm tra username đã tồn tại
+        if dao_authen.check_username_exists(username):
+            validation_errors.append("Tên đăng nhập đã tồn tại!")
+
+        # Kiểm tra email đã tồn tại
+        if dao_authen.check_email_exists(email):
+            validation_errors.append("Email đã tồn tại!")
+
+        # Kiểm tra số điện thoại đã tồn tại
+        if dao_authen.check_phone_exists(phone_number):
+            validation_errors.append("Số điện thoại đã tồn tại!")
+
+        # Nếu có lỗi validation, hiển thị tất cả lỗi
+        if validation_errors:
+            mse = " | ".join(validation_errors)
+        else:
+            # Tạo user bằng dao_user
+            new_user = dao_user.create_user_with_role(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                phone_number=phone_number,
+                address=address,
+                date_of_birth=date_of_birth,
+                gender=gender
+            )
+
+            if new_user:
+                flash("Đăng ký thành công! Hãy đăng nhập.", "success")
+                return redirect(url_for("login"))
+            else:
+                mse = "Có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại!"
+
+    return render_template("register.html", form=form, mse=mse)

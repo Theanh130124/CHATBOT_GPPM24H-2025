@@ -1,37 +1,42 @@
 <header class="header">
     <div class="container-fluid pt-2 pb-2">
-        <div class="d-flex justify-content-between">
-            <img class="navbar-brand text-white logo" src="https://cdn.youmed.vn/wp-content/themes/youmed/images/logo.svg" alt="Logo Trường">
+        <div class="d-flex justify-content-between align-items-center">
+            <!-- Logo -->
+            <a href="/" class="navbar-brand text-white logo">
+                <img src="https://cdn.youmed.vn/wp-content/themes/youmed/images/logo.svg" alt="Logo" class="logo-img">
+                <span class="logo-text">Tư Vấn Da Liễu</span>
+            </a>
 
-
-
-            <!-- Dropdown User Info -->
+            <!-- User Dropdown -->
+            {% if current_user.is_authenticated %}
             <div class="dropdown d-flex align-items-center hover-dropdown">
-                <!-- Tên người dùng và Avatar -->
-                     <button class="btn btn-link text-white dropdown-toggle d-flex align-items-center"
+                <button class="btn btn-link text-white dropdown-toggle d-flex align-items-center"
                         type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <h4 class="mr-4" style="font-size: 1rem; text-decoration: none;">{{ user.username }}</h4> <!-- Đảm bảo không có gạch chân -->
-                    <img src="{{ current_user.avatar }}" alt="Avatar" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                    <h4 class="mr-4" style="font-size: 1rem; text-decoration: none;">{{ current_user.username }}</h4>
+                    <img src="{{ current_user.avatar or 'https://via.placeholder.com/40' }}" alt="Avatar"
+                         class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
                 </button>
 
-
-
-                <!-- Menu Dropdown -->
-
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                     <li>
-                        <a class="dropdown-item" href="#">Vai trò: {{ current_user.role.name }}</a>
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="fas fa-user me-2"></i>Vai trò: {{ current_user.role.name }}
+                        </a>
                     </li>
-
-
-
-                     <li>
-                        <a class="dropdown-item text-danger" href="/logout"> <i class="fa-solid fa-power-off" style="margin-right: 4px"></i>Đăng xuất</a>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="/logout">
+                            <i class="fa-solid fa-power-off me-2"></i>Đăng xuất
+                        </a>
                     </li>
-
                 </ul>
-
             </div>
+            {% else %}
+            <div>
+                <a href="/login" class="btn btn-outline-light me-2">Đăng nhập</a>
+                <a href="/register" class="btn btn-primary">Đăng ký</a>
+            </div>
+            {% endif %}
         </div>
     </div>
 </header>

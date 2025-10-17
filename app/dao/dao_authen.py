@@ -18,6 +18,9 @@ def get_user_by_username(username):
 
 
 # Phần cho validate
+def check_username_exists(username):
+    return User.query.filter_by(username=username).first() is not None
+
 
 def check_password_md5(user, password):
     if user and user.password:  # Đảm bảo user tồn tại và có trường password

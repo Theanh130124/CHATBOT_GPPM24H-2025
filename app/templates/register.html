@@ -1,0 +1,234 @@
+{% extends "layout/base_login.html" %}
+
+{% block title %}Đăng Ký - Hệ Thống Tư Vấn Da Liễu{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/register.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="register-container">
+    <div class="register-card">
+        <!-- Header với nút đăng nhập -->
+        <div class="register-header">
+            <a href="{{ url_for('login') }}" class="btn btn-login">
+                <i class="fa-solid fa-right-to-bracket me-2"></i> Đăng nhập
+            </a>
+            <h2 class="register-title">ĐĂNG KÝ TÀI KHOẢN</h2>
+            <p class="register-subtitle">Tham gia hệ thống tư vấn da liễu thông minh</p>
+        </div>
+
+        <!-- Form đăng ký -->
+        <form method="post" action="/register" class="register-form">
+            {{ form.csrf_token }}
+
+            <div class="form-grid">
+                <!-- Row 1: Username và Email -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fa-solid fa-user me-2"></i>Tên đăng nhập
+                            </label>
+                            {{ form.username(class="form-control", placeholder="Nhập tên đăng nhập") }}
+                            {% for error in form.username.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fa-solid fa-envelope me-2"></i>Email
+                            </label>
+                            {{ form.email(class="form-control", placeholder="Nhập email") }}
+                            {% for error in form.email.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Password và Confirm Password -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fa-solid fa-lock me-2"></i>Mật khẩu
+                            </label>
+                            {{ form.password(class="form-control", placeholder="Nhập mật khẩu") }}
+                            {% for error in form.password.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fa-solid fa-lock me-2"></i>Xác nhận mật khẩu
+                            </label>
+                            {{ form.confirm_password(class="form-control", placeholder="Nhập lại mật khẩu") }}
+                            {% for error in form.confirm_password.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 3: First name và Last name -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fa-solid fa-signature me-2"></i>Họ
+                            </label>
+                            {{ form.first_name(class="form-control", placeholder="Nhập họ") }}
+                            {% for error in form.first_name.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fa-solid fa-signature me-2"></i>Tên
+                            </label>
+                            {{ form.last_name(class="form-control", placeholder="Nhập tên") }}
+                            {% for error in form.last_name.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 4: Phone number và Date of Birth -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fa-solid fa-phone me-2"></i>Số điện thoại
+                            </label>
+                            {{ form.phone_number(class="form-control", placeholder="Nhập số điện thoại") }}
+                            {% for error in form.phone_number.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fa-solid fa-calendar me-2"></i>Ngày sinh
+                            </label>
+                            {{ form.date_of_birth(class="form-control", type="date") }}
+                            {% for error in form.date_of_birth.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 5: Gender và Address -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fa-solid fa-venus-mars me-2"></i>Giới tính
+                            </label>
+                            {{ form.gender(class="form-select") }}
+                            {% for error in form.gender.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fa-solid fa-location-dot me-2"></i>Địa chỉ
+                            </label>
+                            {{ form.address(class="form-control", placeholder="Nhập địa chỉ") }}
+                            {% for error in form.address.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hiển thị lỗi tổng quan -->
+            {% if mse %}
+            <div class="alert alert-danger mt-3" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ mse }}
+            </div>
+            {% endif %}
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-register w-100">
+                <i class="fas fa-user-plus me-2"></i>Đăng ký
+            </button>
+
+            <!-- Đăng ký với Google -->
+            <a href="{{ url_for('register_oauth') }}" class="btn btn-google w-100 mt-3">
+                <i class="fab fa-google me-2"></i> Đăng ký với Google
+            </a>
+        </form>
+
+        <!-- Footer -->
+        <div class="register-footer">
+            <hr>
+            <p class="footer-text">
+                Đã có tài khoản?
+                <a href="{{ url_for('login') }}" class="login-link">Đăng nhập ngay</a>
+            </p>
+            <p class="footer-note">
+                Bằng việc đăng ký, bạn đồng ý với
+                <a href="#">Điều khoản dịch vụ</a> và
+                <a href="#">Chính sách bảo mật</a> của chúng tôi
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Real-time validation với AJAX (optional)
+    const usernameInput = document.getElementById('username');
+    const emailInput = document.getElementById('email');
+    const phoneInput = document.getElementById('phone_number');
+
+    // Real-time check cho username
+    if (usernameInput) {
+        usernameInput.addEventListener('blur', function() {
+            checkFieldAvailability('username', this.value);
+        });
+    }
+
+    // Real-time check cho email
+    if (emailInput) {
+        emailInput.addEventListener('blur', function() {
+            checkFieldAvailability('email', this.value);
+        });
+    }
+
+    // Real-time check cho số điện thoại
+    if (phoneInput) {
+        phoneInput.addEventListener('blur', function() {
+            checkFieldAvailability('phone', this.value);
+        });
+    }
+
+    // Tự động ẩn alert sau 5 giây
+    const alert = document.querySelector('.alert');
+    if (alert) {
+        setTimeout(() => {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 5000);
+    }
+});
+
+function checkFieldAvailability(fieldType, value) {
+    // Có thể triển khai AJAX check real-time nếu cần
+    console.log(`Checking ${fieldType}: ${value}`);
+}
+</script>
+{% endblock %}
