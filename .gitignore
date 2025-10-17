@@ -6,6 +6,8 @@ __pycache__/
 # C extensions
 *.so
 
+app/oauth_config.json
+
 # Distribution / packaging
 .Python
 build/
@@ -140,9 +142,13 @@ celerybeat.pid
 .venv
 env/
 venv/
+gppm/
 ENV/
 env.bak/
 venv.bak/
+
+
+
 
 # Spyder project settings
 .spyderproject
