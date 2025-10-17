@@ -23,7 +23,7 @@ class GenderEnum(enum.Enum):
     OTHER = "OTHER"
 
 class RoleEnum(enum.Enum):
-    DOCTOR = "USER"
+    USER = "USER"
     ADMIN = "ADMIN"
 
 class User(BaseModel,UserMixin):
