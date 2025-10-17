@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+      integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA=="
+      crossorigin="anonymous"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+
+    <!-- Thêm CSS cho tìm kiếm-->
+    <link
+      href="{{ url_for('static', filename='css/base_search.css') }}"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/base.css') }}"
+    />
+    <!-- Thêm CSS Bootstrap -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Thêm JS Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+    <!--Dinh dang ngay thang-->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css"
+    />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+  </head>
+  <body>
+    <!-- {#header#} -->
+    {% block header %} {% include 'layout/header.html' %} {% endblock %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+      {% for category, message in messages %}
+      <div class="toast align-items-center text-white bg-{{ 'danger' if category == 'danger' else 'success' }} border-0 mb-2"
+           role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="3000">
+        <div class="d-flex">
+          <div class="toast-body">{{ message }}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+    <!-- {#nav-content#} -->
+    {% block nav_content %}
+
+    <div class="container-fluid">
+      <div class="row flex-nowrap" style="color: #000">
+        <div class="col-auto col-md-3 col-xl-2 header">
+          <div
+            class="d-flex flex-column align-items-center align-items-sm-start text-white min-vh-100"
+            style="margin-top: 10px"
+          >
+            <ul
+              class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start"
+              id="menu"
+            >
+              <li class="nav-item w-100 my-3">
+                <a
+                  href="/home"
+                  class="nav-link align-middle text-white"
+                  style="font-size: 16px"
+                >
+                  <i class="fa-solid fa-house"></i> Trang chủ
+                </a>
+              </li>
+
+
+              {% if current_user.role.name == 'PATIENT' %}
+              <li class="nav-item w-100 my-3">
+                <a
+                  href="/availableslot"
+                  class="nav-link align-middle text-white"
+                  style="font-size: 16px"
+                >
+                  <i class="fa-solid fa-pen"></i> Đặt lịch khám
+                </a>
+              </li>
+
+              <li class="nav-item w-100 my-3">
+                <a
+                  href="/my_appointments"
+                  class="nav-link align-middle text-white"
+                  style="font-size: 16px"
+                >
+                  <i class="fa-solid fa-list"></i> Xem lịch hẹn của tôi
+                </a>
+              </li>
+
+              <!-- Thêm mục Hồ sơ sức khỏe cho Patient -->
+              <li class="nav-item w-100 my-3">
+                <a
+                  href="{{ url_for('patient_detail', patient_id=current_user.user_id) }}"
+                  class="nav-link align-middle text-white"
+                  style="font-size: 16px"
+                >
+                  <i class="fa-solid fa-file-medical"></i> Hồ sơ sức khỏe
+                </a>
+              </li>
+              {% endif %}
+
+              {% if current_user.role.name == 'DOCTOR'  %}
+              <li class="nav-item w-100 my-3">
+                <a
+                  href="/my_appointments"
+                  class="nav-link align-middle text-white"
+                  style="font-size: 16px"
+                >
+                  <i class="fa-solid fa-list"></i> Lịch hẹn bệnh nhân
+                </a>
+              </li>
+              {% endif %}
+
+              {% if current_user.role.name == 'PATIENT' %}
+              <li class="nav-item w-100 my-3">
+                <a
+                  href="{{ url_for('search_doctor') }}"
+                  class="nav-link align-middle text-white"
+                  style="font-size: 16px"
+                >
+                  <i class="fa-solid fa-magnifying-glass"></i> Tìm kiếm bác sĩ
+                </a>
+              </li>
+              {% endif %}
+
+              <!--                    Chỉ có doctor thấy-->
+                        {% if current_user.role.name == 'DOCTOR' %}
+                            <li class="nav-item w-100 my-3">
+                <a
+                  href="/create_schedule"
+                  class="nav-link align-middle text-white"
+                  style="font-size: 16px"
+                >
+                  <i class="fa-solid fa-magnifying-glass"></i> Tạo lịch làm việc
+                </a>
+              </li>
+                        {% endif %}
+
+              <li class="nav-item w-100 my-3">
+    <a href="{{ url_for('profile') }}" class="nav-link align-middle text-white" style="font-size: 16px">
+        <i class="fa-solid fa-user"></i> Hồ sơ của tôi
+    </a>
+</li>
+
+
+
+            </ul>
+          </div>
+        </div>
+        <!-- {#content#} -->
+        <div class="col py-3">{% block content %}{% endblock %}</div>
+      </div>
+    </div>
+    {% endblock %}
+    <!-- {#footer#} -->
+    {% block footer %} {% include 'layout/footer.html' %} {% endblock %}
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/jspdf-invoice-template@1.4.0/dist/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.0/xlsx.full.min.js"></script>
+    <script>
+      window.onload = function () {
+          {% for msg in get_flashed_messages(category_filter=["forbidden"]) %}
+              alert("{{msg}}")
+          {% endfor %}
+      }
+
+          function clearForm() {
+          // Reset form
+          document.getElementById("accountForm").reset();
+      }
+        document.addEventListener("DOMContentLoaded", function(){
+    var toastElList = [].slice.call(document.querySelectorAll('.toast'))
+    toastElList.map(function (toastEl) {
+      var toast = new bootstrap.Toast(toastEl)
+      toast.show()
+    })
+  });
+    </script>
+  </body>
+</html>
