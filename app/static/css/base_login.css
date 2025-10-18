@@ -1,61 +1,188 @@
-.login-body {
+
+:root {
+    --auth-bg-gradient: linear-gradient(135deg, #1e88e5 0%, #0d47a1 100%);
+    --auth-card-bg: rgba(255, 255, 255, 0.95);
+    --auth-text-primary: #1a237e;
+    --auth-text-secondary: #455a64;
+    --auth-border-color: #e3f2fd;
+    --auth-shadow: 0 20px 40px rgba(30, 136, 229, 0.1);
+}
+
+[data-theme="dark"] {
+    --auth-card-bg: rgba(13, 27, 54, 0.95);
+    --auth-text-primary: #e3f2fd;
+    --auth-text-secondary: #bbdefb;
+    --auth-border-color: #1e3a5f;
+}
+
+.auth-body {
     margin: 0;
     padding: 0;
     min-height: 100vh;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--auth-bg-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
 }
 
-/* Alert positioning and styling */
-.alert {
-    border-radius: 12px;
-    border: none;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    transition: none !important;
+.auth-main {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 1200px;
+    padding: 20px;
 }
 
-.alert:hover {
-    transform: none !important;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15) !important;
-}
-
-.alert-dismissible .close {
-    transition: none !important;
-}
-
-.alert-dismissible .close:hover {
-    background-color: transparent !important;
-    opacity: 0.7 !important;
-}
-
-/* Ensure alerts are properly positioned */
-[style*="position: fixed"] {
+/* Flash Messages */
+.auth-flash-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
     z-index: 9999;
+    min-width: 300px;
+    max-width: 500px;
 }
 
-/* Loading spinner styles */
-#spinner-overlay {
+.auth-flash-message {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(30, 136, 229, 0.15);
+    border-left: 4px solid;
+    animation: authSlideInRight 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.auth-flash-success {
+    background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+    border-left-color: #2e7d32;
+    color: #1b5e20;
+}
+
+.auth-flash-danger {
+    background: linear-gradient(135deg, #ffebee, #ffcdd2);
+    border-left-color: #c62828;
+    color: #b71c1c;
+}
+
+.auth-flash-warning {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    border-left-color: #f57c00;
+    color: #e65100;
+}
+
+.auth-flash-info {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    border-left-color: #1e88e5;
+    color: #0d47a1;
+}
+
+.auth-flash-content {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.auth-flash-close {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+    opacity: 0.7;
+}
+
+.auth-flash-close:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+@keyframes authSlideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Theme Toggle */
+.theme-toggle-auth {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+/* Loading Spinner */
+.auth-loading {
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    display: flex;
+    z-index: 9999;
     align-items: center;
     justify-content: center;
-    z-index: 9999;
+    backdrop-filter: blur(5px);
 }
 
-.spinner {
+.auth-loading.active {
+    display: flex;
+}
+
+.auth-spinner {
     width: 50px;
     height: 50px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #667eea;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-left: 5px solid #1e88e5;
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    animation: authSpin 1s linear infinite;
 }
 
-@keyframes spin {
+@keyframes authSpin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .auth-body {
+        align-items: flex-start;
+        padding-top: 20px;
+    }
+
+    .auth-main {
+        padding: 15px;
+    }
+
+    .auth-flash-container {
+        left: 15px;
+        right: 15px;
+        max-width: none;
+    }
+
+    .theme-toggle-auth {
+        bottom: 10px;
+        right: 10px;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .auth-flash-message,
+    .auth-spinner {
+        animation: none;
+    }
 }

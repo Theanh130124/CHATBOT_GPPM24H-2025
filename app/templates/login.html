@@ -7,94 +7,153 @@
 {% endblock %}
 
 {% block content %}
-<div class="login-container">
-    <div class="login-card">
-        <!-- Header với nút đăng ký -->
-        <div class="login-header">
+<div class="auth-container">
+    <div class="auth-card">
+        <!-- Header -->
+        <div class="auth-header">
             <a href="{{ url_for('register') }}" class="btn btn-register">
-                <i class="fa-solid fa-user-plus me-2"></i> Đăng ký
+                <i class="fas fa-user-plus me-2"></i> Đăng ký
             </a>
-            <h2 class="login-title">ĐĂNG NHẬP</h2>
-            <p class="login-subtitle">Hệ Thống Tư Vấn Da Liễu Thông Minh</p>
+            <div class="auth-title-group">
+                <h1 class="auth-title">ĐĂNG NHẬP</h1>
+                <p class="auth-subtitle">Hệ Thống Tư Vấn Da Liễu Thông Minh</p>
+            </div>
         </div>
 
-        <!-- Form đăng nhập -->
-        <form method="post" action="/login" class="login-form">
+        <!-- Form -->
+        <form method="post" action="/login" class="auth-form">
             {{ form.csrf_token }}
 
             <div class="form-group">
                 <label class="form-label">
-                    <i class="fa-solid fa-user me-2"></i>Tên đăng nhập
+                    <i class="fas fa-user me-2"></i>Tên đăng nhập
                 </label>
-                {{ form.username(class="form-control") }}
+                {{ form.username(class="form-control", placeholder="Nhập tên đăng nhập") }}
             </div>
 
             <div class="form-group">
                 <label class="form-label">
-                    <i class="fa-solid fa-lock me-2"></i>Mật khẩu
+                    <i class="fas fa-lock me-2"></i>Mật khẩu
                 </label>
-                {{ form.password(class="form-control") }}
-                <p class="text-warning mt-2" id="warning-caps-lock" hidden="hidden">
-                    <i class="fa-solid fa-circle-exclamation me-2"></i>
-                    Bạn đang bật Caps lock
-                </p>
+                <div class="password-input-group">
+                    {{ form.password(class="form-control", placeholder="Nhập mật khẩu", id="password") }}
+                    <button type="button" class="toggle-password" aria-label="Hiển thị mật khẩu">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div class="form-hint" id="warning-caps-lock" hidden>
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Caps Lock đang bật
+                </div>
+            </div>
+
+            <div class="form-options">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="rememberMe">
+                    <label class="form-check-label" for="rememberMe">Ghi nhớ đăng nhập</label>
+                </div>
+                <a href="/forgot-password" class="forgot-password">Quên mật khẩu?</a>
             </div>
 
             {% if mse %}
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fa-solid fa-triangle-exclamation me-2"></i>
+            <div class="alert alert-danger auth-alert" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
                 {{ mse }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
             {% endif %}
 
-            <button type="submit" class="btn btn-login w-100">
-                <i class="fa-solid fa-right-to-bracket me-2"></i>
+            <button type="submit" class="btn btn-primary btn-auth w-100">
+                <i class="fas fa-sign-in-alt me-2"></i>
                 {{ form.SubmitFieldLogin.label }}
             </button>
 
-            <!-- Đăng nhập với Google -->
+            <!-- Social Login -->
+            <div class="social-divider">
+                <span>Hoặc đăng nhập với</span>
+            </div>
+
             <a href="{{ url_for('login_oauth') }}" class="btn btn-google w-100">
-                <i class="fab fa-google me-2"></i> Đăng nhập với Google
+                <i class="fab fa-google me-2"></i>
+                Google
             </a>
         </form>
 
         <!-- Footer -->
-        <div class="login-footer">
-            <hr>
+        <div class="auth-footer">
             <p class="footer-text">
-                Nếu bác sĩ chưa có tài khoản?
-                <a href="https://hotro.ou.edu.vn" class="support-link">Vui lòng liên hệ</a>
-                với bệnh viện tại nơi khám hoặc liên hệ đến địa chỉ email
-                <i>supporthealth4444@gmail.com</i> để được hỗ trợ
+                Chưa có tài khoản?
+                <a href="{{ url_for('register') }}" class="auth-link">Đăng ký ngay</a>
             </p>
+            <div class="support-info">
+                <p>Nếu bạn là bác sĩ chưa có tài khoản?</p>
+                <a href="https://hotro.ou.edu.vn" class="support-link">
+                    <i class="fas fa-headset me-2"></i>Liên hệ hỗ trợ
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <div class="welcome-content">
+            <h2>Chào mừng đến với</h2>
+            <h1>Hệ Thống Tư Vấn Da Liễu</h1>
+            <div class="features-list">
+                <div class="feature-item">
+                    <i class="fas fa-robot"></i>
+                    <span>Chatbot AI thông minh</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-user-md"></i>
+                    <span>Bác sĩ chuyên khoa</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-clock"></i>
+                    <span>Hỗ trợ 24/7</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Bảo mật tuyệt đối</span>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const pwInput = document.getElementById("password");
-        const labelWarning = document.getElementById("warning-caps-lock");
+document.addEventListener('DOMContentLoaded', function() {
+    // Password visibility toggle
+    const togglePassword = document.querySelector('.toggle-password');
+    const passwordInput = document.getElementById('password');
 
-        if (pwInput && labelWarning) {
-            pwInput.addEventListener('keyup', (event) => {
-                if (event.getModifierState("CapsLock")) {
-                    labelWarning.removeAttribute("hidden");
-                } else {
-                    labelWarning.setAttribute("hidden", "hidden");
-                }
-            });
-        }
+    if (togglePassword && passwordInput) {
+        togglePassword.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+        });
+    }
 
-        // Tự động ẩn alert sau 5 giây
-        const alert = document.querySelector('.alert');
-        if (alert) {
-            setTimeout(() => {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            }, 5000);
-        }
-    });
+    // Caps Lock warning
+    if (passwordInput) {
+        passwordInput.addEventListener('keyup', function(event) {
+            const warning = document.getElementById('warning-caps-lock');
+            if (event.getModifierState('CapsLock')) {
+                warning.removeAttribute('hidden');
+            } else {
+                warning.setAttribute('hidden', 'true');
+            }
+        });
+    }
+
+    // Auto dismiss alert
+    const alert = document.querySelector('.auth-alert');
+    if (alert) {
+        setTimeout(() => {
+            alert.style.opacity = '0';
+            setTimeout(() => alert.remove(), 300);
+        }, 5000);
+    }
+});
 </script>
 {% endblock %}

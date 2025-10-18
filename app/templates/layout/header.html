@@ -1,42 +1,61 @@
 <header class="header">
-    <div class="container-fluid pt-2 pb-2">
+    <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center">
             <!-- Logo -->
-            <a href="/" class="navbar-brand text-white logo">
-                <img src="https://cdn.youmed.vn/wp-content/themes/youmed/images/logo.svg" alt="Logo" class="logo-img">
+            <a href="/" class="navbar-brand">
+                <img src="{{ url_for('static', filename='images/logoskinai.png') }}" alt="Logo" class="logo-img">
                 <span class="logo-text">Tư Vấn Da Liễu</span>
             </a>
 
-            <!-- User Dropdown -->
-            {% if current_user.is_authenticated %}
-            <div class="dropdown d-flex align-items-center hover-dropdown">
-                <button class="btn btn-link text-white dropdown-toggle d-flex align-items-center"
-                        type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <h4 class="mr-4" style="font-size: 1rem; text-decoration: none;">{{ current_user.username }}</h4>
-                    <img src="{{ current_user.avatar or 'https://via.placeholder.com/40' }}" alt="Avatar"
-                         class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+            <div class="d-flex align-items-center">
+                <!-- Theme Toggle Button -->
+                <button class="btn theme-toggle" id="theme-toggle" title="Chuyển chế độ sáng/tối">
+                    <i class="fas fa-moon"></i>
                 </button>
 
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                    <li>
-                        <a class="dropdown-item" href="#">
-                            <i class="fas fa-user me-2"></i>Vai trò: {{ current_user.role.name }}
-                        </a>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item text-danger" href="/logout">
-                            <i class="fa-solid fa-power-off me-2"></i>Đăng xuất
-                        </a>
-                    </li>
-                </ul>
+                <!-- User Dropdown -->
+                {% if current_user.is_authenticated %}
+                <div class="user-dropdown">
+                    <button class="btn dropdown-toggle d-flex align-items-center gap-2"
+                            type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="d-flex flex-column align-items-end">
+                            <span class="fw-semibold">{{ current_user.username }}</span>
+                            <small class="opacity-75">Vai trò: {{ current_user.role.name }}</small>
+                        </div>
+                        <img src="{{ current_user.avatar or 'https://via.placeholder.com/40' }}"
+                             alt="Avatar" class="user-avatar">
+                    </button>
+
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" href="/profile">
+                                <i class="fas fa-user me-2"></i>Hồ sơ cá nhân
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="/settings">
+                                <i class="fas fa-cog me-2"></i>Cài đặt
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="/logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                {% else %}
+                <div class="auth-buttons">
+                    <a href="/login" class="btn btn-outline-light me-2">
+                        <i class="fas fa-sign-in-alt me-2"></i>Đăng nhập
+                    </a>
+                    <a href="/register" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-2"></i>Đăng ký
+                    </a>
+                </div>
+                {% endif %}
             </div>
-            {% else %}
-            <div>
-                <a href="/login" class="btn btn-outline-light me-2">Đăng nhập</a>
-                <a href="/register" class="btn btn-primary">Đăng ký</a>
-            </div>
-            {% endif %}
         </div>
     </div>
 </header>

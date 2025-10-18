@@ -31,5 +31,5 @@ def check_password_md5(user, password):
 def check_email_exists(email):
     return User.query.filter_by(email=email).first() is not None
 
-def check_phone_exists(phone):
-    return User.query.filter_by(phone=phone).first() is not None
+def check_phone_exists(phone_number):
+    return User.query.filter_by(phone_number=phone_number).first() is not None
