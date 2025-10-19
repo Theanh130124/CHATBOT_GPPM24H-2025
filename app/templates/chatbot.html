@@ -1,0 +1,162 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Chatbot Tư Vấn Da Liễu{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="chatbot-wrapper">
+    <!-- Remove the sidebar toggle button -->
+    
+    <!-- Modernized chat history sidebar - Always visible -->
+    <aside class="chatbot-sidebar" id="chatbot-sidebar">
+        <div class="sidebar-header">
+            <h3 class="sidebar-title">
+                <i class="fas fa-comments me-2"></i>Lịch Sử Chat
+            </h3>
+            <button class="btn-new-chat" id="new-chat-btn" title="Cuộc trò chuyện mới">
+                <i class="fas fa-plus me-2"></i>New Chat
+            </button>
+        </div>
+
+        <div class="sidebar-content">
+            <div class="chat-history" id="chat-history">
+                <!-- Chat history will be populated here -->
+                <div class="empty-state">
+                    <i class="fas fa-comments"></i>
+                    <p>Chưa có cuộc trò chuyện nào</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <button class="btn-clear-history" id="clear-history-btn" title="Xóa tất cả lịch sử">
+                <i class="fas fa-trash me-2"></i>Xóa lịch sử
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Chat Area - Unchanged -->
+    <main class="chatbot-main">
+        <div class="chatbot-container">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <div class="chat-title">
+                    <i class="fas fa-robot"></i>
+                    <h2>Chatbot Tư Vấn Da Liễu</h2>
+                    <span class="badge badge-beta">Beta</span>
+                </div>
+                <div class="chat-actions">
+                    <button class="action-btn" id="theme-toggle" title="Chuyển đổi chế độ sáng/tối">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="action-btn" id="clear-chat" title="Xóa cuộc trò chuyện hiện tại">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="action-btn" id="info-btn" title="Thông tin">
+                        <i class="fas fa-info-circle"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div class="chat-messages" id="chat-messages">
+                <div class="message bot">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <p><strong>Xin chào! 👋</strong></p>
+                        <p>Tôi là chatbot tư vấn về các vấn đề da liễu. Tôi có thể giúp bạn với:</p>
+                        <ul>
+                            <li>Các bệnh da liễu thường gặp</li>
+                            <li>Chăm sóc da cơ bản</li>
+                            <li>Điều trị mụn, nám, tàn nhang</li>
+                            <li>Dị ứng da và cách xử lý</li>
+                            <li>Lời khuyên về sản phẩm chăm sóc da</li>
+                        </ul>
+                        <p>Hãy chọn một chủ đề bên dưới hoặc đặt câu hỏi trực tiếp!</p>
+                        <div class="message-time">Bây giờ</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Suggestions -->
+            <div class="suggestions-container" id="suggestions-container">
+                <div class="suggestions-label">Gợi ý chủ đề:</div>
+                <div class="suggestions" id="suggestions">
+                    <button class="suggestion-btn" data-topic="acne">
+                        <i class="fas fa-flask-vial me-2"></i>Cách trị mụn trứng cá
+                    </button>
+                    <button class="suggestion-btn" data-topic="dry-skin">
+                        <i class="fas fa-droplet me-2"></i>Chăm sóc da khô
+                    </button>
+                    <button class="suggestion-btn" data-topic="allergy">
+                        <i class="fas fa-exclamation-circle me-2"></i>Dị ứng mỹ phẩm
+                    </button>
+                    <button class="suggestion-btn" data-topic="psoriasis">
+                        <i class="fas fa-shield-alt me-2"></i>Bệnh vảy nến
+                    </button>
+                    <button class="suggestion-btn" data-topic="sunscreen">
+                        <i class="fas fa-sun me-2"></i>Chống nắng cho da
+                    </button>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="chat-input-container">
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        class="chat-input" 
+                        id="chat-input" 
+                        placeholder="Nhập câu hỏi của bạn..."
+                        autocomplete="off"
+                    >
+                    <button class="send-button" id="send-button" title="Gửi tin nhắn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div class="input-hint">
+                    <small>💡 Mẹo: Bạn có thể gửi hình ảnh để phân tích tình trạng da</small>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Info Modal - Unchanged -->
+<div class="modal fade" id="infoModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle me-2"></i>Về Chatbot
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Chatbot Tư Vấn Da Liễu Thông Minh</strong></p>
+                <p>Đây là một công cụ hỗ trợ tư vấn về các vấn đề da liễu dựa trên trí tuệ nhân tạo.</p>
+                <div class="alert alert-info">
+                    <strong>⚠️ Lưu ý:</strong> Chatbot này chỉ cung cấp thông tin tham khảo. 
+                    Vui lòng tham khảo ý kiến bác sĩ chuyên khoa da liễu để có chẩn đoán chính xác.
+                </div>
+                <p><strong>Tính năng:</strong></p>
+                <ul>
+                    <li>Tư vấn về các bệnh da liễu</li>
+                    <li>Gợi ý chăm sóc da</li>
+                    <li>Phân tích hình ảnh da (nếu có)</li>
+                    <li>Lưu lịch sử trò chuyện</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_js %}
+<script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+{% endblock %}

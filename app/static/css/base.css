@@ -327,11 +327,12 @@ body {
 
 /* Sidebar Styles */
 .sidebar {
+    position: relative;
+    transition: width 0.3s ease;
     background: var(--bg-sidebar);
     color: var(--text-light);
     min-height: calc(100vh - 140px);
     width: 280px;
-    transition: var(--transition);
     border-right: 1px solid var(--border-color);
 }
 
@@ -470,195 +471,71 @@ body {
     background: var(--bg-primary);
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-    .layout-wrapper {
-        flex-direction: column;
-    }
-
-    .sidebar {
-        width: 100%;
-        min-height: auto;
-        order: 2;
-    }
-
-    .content-area {
-        order: 1;
-    }
-
-    .flash-container {
-        left: 20px;
-        right: 20px;
-        max-width: none;
-    }
-
-    .header .container-fluid {
-        padding: 10px 15px;
-    }
-
-    .navbar-brand {
-        font-size: 1.1rem;
-    }
-
-    .logo-img {
-        height: 32px;
-    }
-
-    .theme-toggle {
-        width: 35px;
-        height: 35px;
-        margin-right: 8px;
-    }
-}
-
-@media (max-width: 576px) {
-    .auth-buttons {
-        display: flex;
-        gap: 8px;
-    }
-
-    .auth-buttons .btn {
-        padding: 6px 12px;
-        font-size: 0.9rem;
-    }
-
-    .dropdown-menu {
-        position: fixed !important;
-        top: auto !important;
-        left: 10px !important;
-        right: 10px !important;
-        bottom: 10px !important;
-        width: auto !important;
-    }
-}
-
-/* Loading States */
-.loading {
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-.spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid var(--border-color);
-    border-left: 4px solid var(--primary-color);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Accessibility */
-@media (prefers-reduced-motion: reduce) {
-    * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
-
-/* Focus styles for keyboard navigation */
-.btn:focus,
-.form-control:focus,
-.dropdown-toggle:focus {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
-}
-
-/* Nút lên đầu và xuống cuối trang */
-.scroll-buttons {
-    position: fixed;
-    right: 20px;
-    z-index: 1000;
-}
-
-.scroll-top {
-    bottom: 80px;
-}
-
-.scroll-bottom {
-    bottom: 20px;
-}
-
-.scroll-btn {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    box-shadow: var(--shadow-lg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    transition: var(--transition);
-    cursor: pointer;
-}
-
-.scroll-btn:hover {
-    background: var(--secondary-color);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-xl);
-}
-
-/* Ẩn nút khi không cần thiết */
-.scroll-btn.hidden {
-    opacity: 0;
-    visibility: hidden;
-    transform: scale(0.8);
-}
-
-/* Sửa sidebar để cuộn cùng trang */
+/* Collapsible Sidebar */
 .sidebar {
+    position: relative;
+    transition: width 0.3s ease;
     background: var(--bg-sidebar);
     color: var(--text-light);
-    width: 280px;
-    transition: var(--transition);
-    border-right: 1px solid var(--border-color);
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    overflow-y: auto;
-}
-
-/* Đảm bảo layout không bị ảnh hưởng */
-.layout-wrapper {
-    display: flex;
-    min-height: 100vh;
-}
-
-.content-area {
-    flex: 1;
-    padding: 0;
-    background: var(--bg-primary);
     min-height: calc(100vh - 140px);
+    width: 280px;
+    border-right: 1px solid var(--border-color);
 }
 
-/* Sửa màu đồng bộ */
-.header {
-    background: var(--bg-sidebar);
-    color: var(--text-light);
-    box-shadow: var(--shadow-md);
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+.sidebar.collapsed {
+    width: 60px !important;
 }
 
-.footer {
-    background: var(--bg-sidebar);
-    color: var(--text-light);
-    padding: 40px 0 20px;
-    margin-top: auto;
+.sidebar.collapsed .sidebar-content .nav-link span {
+    display: none;
 }
 
-/* Dark mode điều chỉnh */
-[data-theme="dark"] .sidebar,
-[data-theme="dark"] .header,
-[data-theme="dark"] .footer {
-    background: var(--bg-sidebar);
+.sidebar.collapsed .nav-item {
+    text-align: center;
+    margin: 4px auto;
+}
+
+.sidebar.collapsed.expanded,
+.sidebar.collapsed:hover {
+    width: 280px !important;
+}
+
+.sidebar.collapsed.expanded .sidebar-content .nav-link span,
+.sidebar.collapsed:hover .sidebar-content .nav-link span {
+    display: inline;
+}
+
+.sidebar-content {
+    padding: 20px 0;
+}
+
+/* Remove the toggle button */
+.sidebar-toggle-btn {
+    display: none !important;
+}
+
+/* Mobile adjustments for sidebar */
+@media (max-width: 768px) {
+    .sidebar.collapsed {
+        width: 0 !important;
+    }
+    
+    .sidebar.collapsed.expanded {
+        width: 280px !important;
+    }
+}
+
+/* Fix nav item alignment in collapsed state */
+.sidebar.collapsed .nav-item {
+    display: flex;
+    justify-content: center;
+}
+
+.sidebar.collapsed .nav-link {
+    padding: 12px !important;
+    justify-content: center;
+}
+
+.sidebar.collapsed .nav-link i {
+    margin-right: 0;
 }

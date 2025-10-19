@@ -1,4 +1,3 @@
-
 import uuid
 
 from flask import render_template , redirect , request , url_for  , session,flash, jsonify
@@ -6,8 +5,8 @@ from flask_login import current_user , logout_user , login_required , login_user
 
 from app.models import RoleEnum , User
 from app import app , flow
-from form import LoginForm , RegisterForm
-from dao import dao_authen , dao_user
+from .form import LoginForm , RegisterForm
+from .dao import dao_authen , dao_user
 from app.extensions import db
 
 import google.oauth2.id_token
@@ -167,3 +166,8 @@ def register():
                 mse = "Có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại!"
 
     return render_template("register.html", form=form, mse=mse)
+
+
+@login_required
+def chatbot():
+    return render_template('chatbot.html')
