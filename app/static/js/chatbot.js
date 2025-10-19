@@ -1,22 +1,15 @@
 class Chatbot {
   constructor() {
-    this.theme = localStorage.getItem("chatbot-theme") || "light";
-    this.chatSessions =
-      JSON.parse(localStorage.getItem("chatbot-sessions")) || [];
-    this.currentSessionId = null;
-    this.isTyping = false;
+    this.theme = localStorage.getItem("chatbot-theme") || "light"
+    this.isTyping = false
+    this.apiBaseUrl = "/api/chat"
+    this.currentConversationId = null
+    this.conversations = []
 
-    this.initializeElements();
-    this.bindEvents();
-    this.applyTheme();
-    this.loadChatSessions();
-    this.startNewSession();
-  }
-
-  generateSessionId() {
-    return (
-      "session_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9)
-    );
+    this.initializeElements()
+    this.bindEvents()
+    this.applyTheme()
+    this.loadConversations()
   }
 
   initializeElements() {
@@ -33,60 +26,50 @@ class Chatbot {
       suggestionsContainer: document.getElementById("suggestions-container"),
       suggestions: document.querySelectorAll(".suggestion-btn"),
       sidebar: document.getElementById("chatbot-sidebar"),
-    };
+    }
   }
 
   bindEvents() {
-    this.elements.sendButton.addEventListener("click", () =>
-      this.sendMessage()
-    );
+    this.elements.sendButton.addEventListener("click", () => this.sendMessage())
     this.elements.chatInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        this.sendMessage();
+        e.preventDefault()
+        this.sendMessage()
       }
-    });
+    })
 
-    this.elements.clearChat.addEventListener("click", () =>
-      this.clearCurrentChat()
-    );
-    this.elements.themeToggle.addEventListener("click", () =>
-      this.toggleTheme()
-    );
+    this.elements.clearChat.addEventListener("click", () => this.clearCurrentChat())
+    this.elements.themeToggle.addEventListener("click", () => this.toggleTheme())
 
     if (this.elements.infoBtn) {
       this.elements.infoBtn.addEventListener("click", () => {
-        const infoModal = document.getElementById("infoModal");
+        const infoModal = document.getElementById("infoModal")
         if (infoModal) {
-          const bootstrap = window.bootstrap;
+          const bootstrap = window.bootstrap
           if (bootstrap) {
-            const Modal = bootstrap.Modal;
-            new Modal(infoModal).show();
+            const Modal = bootstrap.Modal
+            new Modal(infoModal).show()
           } else {
-            console.error("Bootstrap library is not loaded.");
+            console.error("Bootstrap library is not loaded.")
           }
         }
-      });
+      })
     }
 
     if (this.elements.newChatBtn) {
-      this.elements.newChatBtn.addEventListener("click", () =>
-        this.startNewSession()
-      );
+      this.elements.newChatBtn.addEventListener("click", () => this.startNewConversation())
     }
 
     if (this.elements.clearHistoryBtn) {
-      this.elements.clearHistoryBtn.addEventListener("click", () =>
-        this.clearAllHistory()
-      );
+      this.elements.clearHistoryBtn.addEventListener("click", () => this.clearAllHistory())
     }
 
     this.elements.suggestions.forEach((btn) => {
       btn.addEventListener("click", (e) => {
-        const topic = e.currentTarget.getAttribute("data-topic");
-        this.handleSuggestion(topic);
-      });
-    });
+        const topic = e.currentTarget.getAttribute("data-topic")
+        this.handleSuggestion(topic)
+      })
+    })
   }
 
   handleSuggestion(topic) {
@@ -96,50 +79,187 @@ class Chatbot {
       allergy: "Tôi bị dị ứng mỹ phẩm, phải làm sao?",
       psoriasis: "Bệnh vảy nến có cách điều trị nào không?",
       sunscreen: "Nên dùng kem chống nắng như thế nào?",
-    };
+    }
 
     if (suggestions[topic]) {
-      this.elements.chatInput.value = suggestions[topic];
-      this.sendMessage();
+      this.elements.chatInput.value = suggestions[topic]
+      this.sendMessage()
     }
   }
 
-  startNewSession() {
-    this.currentSessionId = this.generateSessionId();
-    this.elements.chatMessages.innerHTML = "";
-    this.addWelcomeMessage();
-    this.renderChatHistory();
+  async loadConversations() {
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/conversations`)
+      if (!response.ok) throw new Error("Failed to load conversations")
+
+      this.conversations = await response.json()
+
+      // Display conversations in sidebar
+      if (this.elements.chatHistory) {
+        this.renderConversationsSidebar(this.conversations)
+      }
+
+      // Load first conversation or create new one
+      if (this.conversations.length > 0) {
+        await this.loadConversation(this.conversations[0].id)
+      } else {
+        await this.startNewConversation()
+      }
+    } catch (error) {
+      console.error("Error loading conversations:", error)
+      await this.startNewConversation()
+    }
+  }
+
+  renderConversationsSidebar(conversations) {
+    const historyContainer = this.elements.chatHistory
+
+    if (!conversations || conversations.length === 0) {
+      historyContainer.innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-inbox"></i>
+          <p>Chưa có cuộc trò chuyện nào</p>
+        </div>
+      `
+      return
+    }
+
+    historyContainer.innerHTML = conversations
+      .map(
+        (conv) => `
+          <div class="chat-item" data-conversation-id="${conv.id}">
+            <div class="chat-item-icon">
+              <i class="fas fa-comments"></i>
+            </div>
+            <div class="chat-item-content">
+              <div class="chat-item-title">${conv.title}</div>
+              <div class="chat-item-time">${conv.updatedAt}</div>
+            </div>
+          </div>
+        `,
+      )
+      .join("")
+
+    // Add click handlers to conversation items
+    document.querySelectorAll(".chat-item").forEach((item) => {
+      item.addEventListener("click", async () => {
+        const convId = item.getAttribute("data-conversation-id")
+        await this.loadConversation(Number.parseInt(convId))
+      })
+    })
+  }
+
+  async loadConversation(conversationId) {
+    try {
+      this.currentConversationId = conversationId
+      const response = await fetch(`${this.apiBaseUrl}/conversations/${conversationId}/messages`)
+      if (!response.ok) throw new Error("Failed to load messages")
+
+      const messages = await response.json()
+      this.elements.chatMessages.innerHTML = ""
+
+      // Display all messages
+      messages.forEach((msg) => {
+        this.renderMessage({
+          content: msg.content,
+          type: msg.type,
+          timestamp: msg.timestamp,
+        })
+      })
+
+      this.scrollToBottom()
+    } catch (error) {
+      console.error("Error loading conversation:", error)
+    }
+  }
+
+  async startNewConversation() {
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/conversations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: `Cuộc trò chuyện ${new Date().toLocaleString("vi-VN")}`,
+        }),
+      })
+
+      if (!response.ok) throw new Error("Failed to create conversation")
+
+      const newConversation = await response.json()
+      this.currentConversationId = newConversation.id
+      this.conversations.unshift(newConversation)
+
+      // Update sidebar
+      if (this.elements.chatHistory) {
+        this.renderConversationsSidebar(this.conversations)
+      }
+
+      this.elements.chatMessages.innerHTML = ""
+      this.addWelcomeMessage()
+    } catch (error) {
+      console.error("Error creating conversation:", error)
+    }
   }
 
   async sendMessage() {
-    const message = this.elements.chatInput.value.trim();
+    const message = this.elements.chatInput.value.trim()
 
-    if (!message || this.isTyping) return;
+    if (!message || this.isTyping) return
 
-    this.addMessage(message, "user");
-    this.elements.chatInput.value = "";
+    // Create conversation if not exists
+    if (!this.currentConversationId) {
+      await this.startNewConversation()
+    }
 
-    this.showTypingIndicator();
+    this.addMessageToUI(message, "user")
+    this.elements.chatInput.value = ""
+
+    // Save user message to database
+    try {
+      await this.saveMessageToDatabase(message, "user")
+    } catch (error) {
+      console.error("Error saving user message:", error)
+    }
+
+    this.showTypingIndicator()
 
     try {
-      const response = await this.getBotResponse(message);
-      this.hideTypingIndicator();
-      this.addMessage(response, "bot");
+      const botResponse = await this.getBotResponse(message)
+      this.hideTypingIndicator()
+      this.addMessageToUI(botResponse, "bot")
+
+      // Save bot response to database
+      await this.saveMessageToDatabase(botResponse, "bot")
     } catch (error) {
-      this.hideTypingIndicator();
-      this.addMessage(
-        "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.",
-        "bot"
-      );
-      console.error("Chatbot error:", error);
+      this.hideTypingIndicator()
+      const errorMsg = "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau."
+      this.addMessageToUI(errorMsg, "bot")
+      console.error("Chatbot error:", error)
+    }
+  }
+
+  async saveMessageToDatabase(content, type) {
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/conversations/${this.currentConversationId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: content,
+          type: type,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to save message")
+      }
+    } catch (error) {
+      console.error("Error saving message to database:", error)
     }
   }
 
   async getBotResponse(userMessage) {
     // Simulate API call delay
-    await new Promise((resolve) =>
-      setTimeout(resolve, 1000 + Math.random() * 1500)
-    );
+    await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1500))
 
     const responses = {
       mụn: `**Về vấn đề mụn trứng cá:**
@@ -268,51 +388,47 @@ class Chatbot {
 Thông tin tôi cung cấp chỉ mang tính tham khảo. Để có chẩn đoán chính xác, bạn nên đến gặp bác sĩ da liễu.
 
 Bạn có thể mô tả chi tiết hơn về tình trạng da của mình không?`,
-    };
+    }
 
-    const lowerMessage = userMessage.toLowerCase();
+    const lowerMessage = userMessage.toLowerCase()
     for (const [key, response] of Object.entries(responses)) {
       if (key !== "default" && lowerMessage.includes(key)) {
-        return response;
+        return response
       }
     }
 
-    return responses.default;
+    return responses.default
   }
 
-  addMessage(content, type) {
-    const message = {
-      id: Date.now(),
+  addMessageToUI(content, type) {
+    const timestamp = new Date().toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+
+    this.renderMessage({
       content,
       type,
-      timestamp: new Date().toLocaleTimeString("vi-VN", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      sessionId: this.currentSessionId,
-    };
+      timestamp,
+    })
 
-    this.renderMessage(message);
-    this.saveMessage(message);
-    this.scrollToBottom();
+    this.scrollToBottom()
   }
 
   renderMessage(message) {
-    const messageElement = document.createElement("div");
-    messageElement.className = `message ${message.type}`;
+    const messageElement = document.createElement("div")
+    messageElement.className = `message ${message.type}`
     messageElement.innerHTML = `
-            <div class="message-avatar">
-                <i class="fas fa-${
-                  message.type === "user" ? "user" : "robot"
-                }"></i>
-            </div>
-            <div class="message-content">
-                ${this.formatMessageContent(message.content)}
-                <div class="message-time">${message.timestamp}</div>
-            </div>
-        `;
+      <div class="message-avatar">
+        <i class="fas fa-${message.type === "user" ? "user" : "robot"}"></i>
+      </div>
+      <div class="message-content">
+        ${this.formatMessageContent(message.content)}
+        <div class="message-time">${message.timestamp}</div>
+      </div>
+    `
 
-    this.elements.chatMessages.appendChild(messageElement);
+    this.elements.chatMessages.appendChild(messageElement)
   }
 
   formatMessageContent(content) {
@@ -334,62 +450,87 @@ Bạn có thể mô tả chi tiết hơn về tình trạng da của mình khôn
       .replace(/💧/g, "💧")
       .replace(/🚫/g, "🚫")
       .replace(/🛡️/g, "🛡️")
-      .replace(/📋/g, "📋");
+      .replace(/📋/g, "📋")
   }
 
   showTypingIndicator() {
-    this.isTyping = true;
-    const typingElement = document.createElement("div");
-    typingElement.className = "message bot loading";
-    typingElement.id = "typing-indicator";
+    this.isTyping = true
+    const typingElement = document.createElement("div")
+    typingElement.className = "message bot loading"
+    typingElement.id = "typing-indicator"
     typingElement.innerHTML = `
-            <div class="message-avatar">
-                <i class="fas fa-robot"></i>
-            </div>
-            <div class="message-content">
-                <div class="typing-indicator">
-                    <span class="typing-dot"></span>
-                    <span class="typing-dot"></span>
-                    <span class="typing-dot"></span>
-                </div>
-            </div>
-        `;
-    this.elements.chatMessages.appendChild(typingElement);
-    this.scrollToBottom();
+      <div class="message-avatar">
+        <i class="fas fa-robot"></i>
+      </div>
+      <div class="message-content">
+        <div class="typing-indicator">
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+        </div>
+      </div>
+    `
+    this.elements.chatMessages.appendChild(typingElement)
+    this.scrollToBottom()
   }
 
   hideTypingIndicator() {
-    this.isTyping = false;
-    const typingElement = document.getElementById("typing-indicator");
+    this.isTyping = false
+    const typingElement = document.getElementById("typing-indicator")
     if (typingElement) {
-      typingElement.remove();
+      typingElement.remove()
     }
   }
 
   scrollToBottom() {
     setTimeout(() => {
-      this.elements.chatMessages.scrollTop =
-        this.elements.chatMessages.scrollHeight;
-    }, 100);
+      this.elements.chatMessages.scrollTop = this.elements.chatMessages.scrollHeight
+    }, 100)
   }
 
-  clearCurrentChat() {
+  async clearCurrentChat() {
     if (confirm("Bạn có chắc muốn xóa cuộc trò chuyện hiện tại?")) {
-      this.elements.chatMessages.innerHTML = "";
-      this.startNewSession();
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/conversations/${this.currentConversationId}`, {
+          method: "DELETE",
+        })
+
+        if (!response.ok) throw new Error("Failed to delete conversation")
+
+        this.conversations = this.conversations.filter((c) => c.id !== this.currentConversationId)
+
+        if (this.elements.chatHistory) {
+          this.renderConversationsSidebar(this.conversations)
+        }
+
+        await this.startNewConversation()
+      } catch (error) {
+        console.error("Error deleting conversation:", error)
+      }
     }
   }
 
-  clearAllHistory() {
-    if (
-      confirm(
-        "Bạn có chắc muốn xóa tất cả lịch sử trò chuyện? Hành động này không thể hoàn tác."
-      )
-    ) {
-      localStorage.removeItem("chatbot-sessions");
-      this.chatSessions = [];
-      this.renderChatHistory();
-      this.startNewSession();
+  async clearAllHistory() {
+    if (confirm("Bạn có chắc muốn xóa tất cả lịch sử trò chuyện? Hành động này không thể hoàn tác.")) {
+      try {
+        // Delete all conversations
+        for (const conv of this.conversations) {
+          await fetch(`${this.apiBaseUrl}/conversations/${conv.id}`, {
+            method: "DELETE",
+          })
+        }
+
+        this.conversations = []
+        this.elements.chatMessages.innerHTML = ""
+
+        if (this.elements.chatHistory) {
+          this.renderConversationsSidebar([])
+        }
+
+        await this.startNewConversation()
+      } catch (error) {
+        console.error("Error clearing history:", error)
+      }
     }
   }
 
@@ -404,116 +545,26 @@ Tôi có thể giúp bạn với các vấn đề về:
 ⚠️ **Xử lý dị ứng** và kích ứng da
 📋 **Tư vấn sản phẩm** chăm sóc da phù hợp
 
-Hãy chọn chủ đề bên dưới hoặc mô tả vấn đề của bạn!`;
+Hãy chọn chủ đề bên dưới hoặc mô tả vấn đề của bạn!`
 
-    this.addMessage(welcomeMessage, "bot");
-  }
-
-  saveMessage(message) {
-    // Find or create session
-    let session = this.chatSessions.find((s) => s.id === this.currentSessionId);
-    if (!session) {
-      session = {
-        id: this.currentSessionId,
-        title: "Cuộc trò chuyện mới",
-        createdAt: new Date().toLocaleString("vi-VN"),
-        messages: [],
-      };
-      this.chatSessions.push(session);
-    }
-
-    session.messages.push(message);
-
-    // Update session title based on first user message
-    if (session.messages.length === 2 && message.type === "user") {
-      session.title =
-        message.content.substring(0, 30) +
-        (message.content.length > 30 ? "..." : "");
-    }
-
-    this.saveChatSessions();
-    this.renderChatHistory();
-  }
-
-  saveChatSessions() {
-    // Keep only last 50 sessions
-    const sessions = this.chatSessions.slice(-50);
-    localStorage.setItem("chatbot-sessions", JSON.stringify(sessions));
-  }
-
-  loadChatSessions() {
-    this.chatSessions =
-      JSON.parse(localStorage.getItem("chatbot-sessions")) || [];
-  }
-
-  renderChatHistory() {
-    const historyContainer = this.elements.chatHistory;
-
-    if (this.chatSessions.length === 0) {
-      historyContainer.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-inbox"></i>
-                    <p>Chưa có cuộc trò chuyện nào</p>
-                </div>
-            `;
-      return;
-    }
-
-    historyContainer.innerHTML = this.chatSessions
-      .reverse()
-      .map(
-        (session) => `
-                <div class="chat-item ${
-                  session.id === this.currentSessionId ? "active" : ""
-                }" 
-                     data-session-id="${session.id}">
-                    <div class="chat-item-icon">
-                        <i class="fas fa-comments"></i>
-                    </div>
-                    <div class="chat-item-content">
-                        <div class="chat-item-title">${session.title}</div>
-                        <div class="chat-item-time">${session.createdAt}</div>
-                    </div>
-                </div>
-            `
-      )
-      .join("");
-
-    // Add click handlers
-    historyContainer.querySelectorAll(".chat-item").forEach((item) => {
-      item.addEventListener("click", () =>
-        this.loadSession(item.getAttribute("data-session-id"))
-      );
-    });
-  }
-
-  loadSession(sessionId) {
-    const session = this.chatSessions.find((s) => s.id === sessionId);
-    if (!session) return;
-
-    this.currentSessionId = sessionId;
-    this.elements.chatMessages.innerHTML = "";
-
-    session.messages.forEach((message) => this.renderMessage(message));
-    this.renderChatHistory();
-    this.scrollToBottom();
+    this.addMessageToUI(welcomeMessage, "bot")
   }
 
   toggleTheme() {
-    this.theme = this.theme === "light" ? "dark" : "light";
-    this.applyTheme();
-    localStorage.setItem("chatbot-theme", this.theme);
+    this.theme = this.theme === "light" ? "dark" : "light"
+    this.applyTheme()
+    localStorage.setItem("chatbot-theme", this.theme)
   }
 
   applyTheme() {
-    document.documentElement.setAttribute("data-theme", this.theme);
-    const icon = this.elements.themeToggle.querySelector("i");
+    document.documentElement.setAttribute("data-theme", this.theme)
+    const icon = this.elements.themeToggle.querySelector("i")
     if (icon) {
-      icon.className = this.theme === "light" ? "fas fa-moon" : "fas fa-sun";
+      icon.className = this.theme === "light" ? "fas fa-moon" : "fas fa-sun"
     }
   }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  window.chatbot = new Chatbot();
-});
+  window.chatbot = new Chatbot()
+})
