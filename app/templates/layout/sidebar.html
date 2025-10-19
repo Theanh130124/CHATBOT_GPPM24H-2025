@@ -17,17 +17,17 @@
                 </li>
 
                 <li class="nav-item">
-                    <a href="/history" class="nav-link align-middle {{ 'active' if request.path == '/history' }}">
-                        <i class="fas fa-history"></i>
-                        <span>Lịch sử tư vấn</span>
+                    <a href="/profile" class="nav-link align-middle {{ 'active' if request.path == '/profile' }}">
+                        <i class="fas fa-user"></i>
+                        <span>Hồ sơ cá nhân</span>
                     </a>
                 </li>
 
-                {% if current_user.role.name == 'doctor' %}
+                {% if current_user.role.name == 'ADMIN' %}
                 <li class="nav-item">
-                    <a href="/patients" class="nav-link align-middle {{ 'active' if request.path == '/patients' }}">
-                        <i class="fas fa-user-injured"></i>
-                        <span>Quản lý bệnh nhân</span>
+                    <a href="/admin" class="nav-link align-middle {{ 'active' if request.path == '/admin' }}">
+                        <i class="fas fa-cog"></i>
+                        <span>Quản lý hệ thống</span>
                     </a>
                 </li>
                 {% endif %}
@@ -36,14 +36,7 @@
             <li class="nav-item">
                 <a href="/about" class="nav-link align-middle {{ 'active' if request.path == '/about' }}">
                     <i class="fas fa-info-circle"></i>
-                    <span>Giới thiệu</span>
-                </a>
-            </li>
-
-            <li class="nav-item">
-                <a href="/contact" class="nav-link align-middle {{ 'active' if request.path == '/contact' }}">
-                    <i class="fas fa-phone"></i>
-                    <span>Liên hệ</span>
+                    <span>Về Chúng Tôi</span>
                 </a>
             </li>
         </ul>

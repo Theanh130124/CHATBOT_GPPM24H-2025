@@ -76,10 +76,8 @@
 
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
 
     {% block additional_js %}{% endblock %}
-
-    <!-- Before closing body tag, after other scripts -->
-    <script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>
 </body>
 </html>

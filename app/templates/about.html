@@ -1,0 +1,560 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Giới Thiệu - Hệ Thống Tư Vấn Da Liễu Thông Minh{% endblock %}
+
+{% block additional_css %}
+<style>
+    /* Hero Section */
+    .about-hero {
+        background: linear-gradient(135deg, #1e88e5, #0d47a1);
+        color: white;
+        padding: 80px 0;
+        text-align: center;
+    }
+
+    .about-hero h1 {
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin-bottom: 1.5rem;
+    }
+
+    .about-hero p {
+        font-size: 1.3rem;
+        opacity: 0.9;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    /* About Content */
+    .about-section {
+        padding: 80px 0;
+    }
+
+    .about-section:nth-child(even) {
+        background: var(--bg-secondary);
+    }
+
+    .section-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 2rem;
+        color: var(--text-primary);
+        text-align: center;
+    }
+
+    /* Mission & Vision */
+    .mission-vision {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+        margin-bottom: 3rem;
+    }
+
+    .mission-card,
+    .vision-card {
+        background: var(--bg-primary);
+        padding: 3rem;
+        border-radius: 20px;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--border-color);
+    }
+
+    .mission-card h3,
+    .vision-card h3 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: var(--primary-color);
+    }
+
+    .mission-card p,
+    .vision-card p {
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: var(--text-secondary);
+    }
+
+    /* Team Section */
+    .team-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .team-card {
+        background: var(--bg-secondary);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow-md);
+        transition: var(--transition);
+        text-align: center;
+    }
+
+    .team-card:hover {
+        transform: translateY(-10px);
+        box-shadow: var(--shadow-xl);
+    }
+
+    .team-image {
+        width: 100%;
+        height: 250px;
+        background: linear-gradient(135deg, #1e88e5, #0d47a1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: white;
+    }
+
+    .team-info {
+        padding: 2rem;
+    }
+
+    .team-name {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+
+    .team-role {
+        color: var(--primary-color);
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .team-bio {
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+    }
+
+    /* Features List */
+    .features-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .feature-item {
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .feature-icon {
+        flex-shrink: 0;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #1e88e5, #0d47a1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .feature-content h4 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin: 0 0 0.5rem 0;
+        color: var(--text-primary);
+    }
+
+    .feature-content p {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    /* Contact Section */
+    .contact-section {
+        background: linear-gradient(135deg, #1e88e5, #0d47a1);
+        color: white;
+        padding: 80px 0;
+    }
+
+    .contact-content {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .contact-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .contact-card {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 2rem;
+        border-radius: 16px;
+        text-align: center;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .contact-card i {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .contact-card h4 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .contact-card p {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 0.95rem;
+    }
+
+    /* Contact Form */
+    .contact-form-container {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 3rem;
+        border-radius: 20px;
+        color: var(--text-primary);
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: var(--transition);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #1e88e5;
+        box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
+    }
+
+    .form-control textarea {
+        resize: vertical;
+        min-height: 120px;
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, #1e88e5, #0d47a1);
+        color: white;
+        padding: 14px 40px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(30, 136, 229, 0.3);
+    }
+
+    /* Statistics */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 2rem;
+        text-align: center;
+    }
+
+    .stat-item h3 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-item p {
+        font-size: 1.1rem;
+        color: var(--text-secondary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .about-hero h1 {
+            font-size: 2.5rem;
+        }
+
+        .section-title {
+            font-size: 2rem;
+        }
+
+        .mission-vision {
+            grid-template-columns: 1fr;
+        }
+
+        .contact-form-container {
+            padding: 2rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .about-hero {
+            padding: 60px 0;
+        }
+
+        .about-section {
+            padding: 60px 0;
+        }
+
+        .mission-card,
+        .vision-card {
+            padding: 2rem;
+        }
+
+        .contact-section {
+            padding: 60px 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="about-hero">
+    <div class="container">
+        <h1>Về Chúng Tôi</h1>
+        <p>Hệ Thống Tư Vấn Da Liễu Thông Minh - Kết nối bạn với AI và các bác sĩ chuyên khoa</p>
+    </div>
+</section>
+
+<!-- Mission & Vision -->
+<section class="about-section">
+    <div class="container">
+        <h2 class="section-title">Sứ Mệnh & Tầm Nhìn</h2>
+        <div class="mission-vision">
+            <div class="mission-card">
+                <h3><i class="fas fa-target me-2"></i>Sứ Mệnh</h3>
+                <p>
+                    Cung cấp giải pháp tư vấn da liễu toàn diện, kết nối người dùng với 
+                    công nghệ AI tiên tiến và đội ngũ bác sĩ chuyên khoa giàu kinh nghiệm, 
+                    giúp mọi người chăm sóc da khỏe mạnh và tự tin.
+                </p>
+            </div>
+            <div class="vision-card">
+                <h3><i class="fas fa-star me-2"></i>Tầm Nhìn</h3>
+                <p>
+                    Trở thành nền tảng tư vấn da liễu hàng đầu tại Việt Nam, 
+                    nơi mỗi người có thể tiếp cận dịch vụ chăm sóc da chất lượng cao, 
+                    được cá nhân hóa và dễ dàng.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Why Choose Us -->
+<section class="about-section">
+    <div class="container">
+        <h2 class="section-title">Tại Sao Chọn Chúng Tôi?</h2>
+        <div class="features-list">
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>AI Thông Minh</h4>
+                    <p>Chatbot được đào tạo chuyên sâu về da liễu, cung cấp tư vấn 24/7</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Bác Sĩ Chuyên Khoa</h4>
+                    <p>Đội ngũ bác sĩ da liễu giàu kinh nghiệm sẵn sàng hỗ trợ</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Bảo Mật Tuyệt Đối</h4>
+                    <p>Thông tin cá nhân được mã hóa và bảo vệ theo tiêu chuẩn y tế</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-zap"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Nhanh Chóng & Tiện Lợi</h4>
+                    <p>Tư vấn ngay lập tức mà không cần chờ đợi lâu</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Theo Dõi Tiến Trình</h4>
+                    <p>Lưu trữ lịch sử tư vấn để theo dõi sự cải thiện da</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Hỗ Trợ 24/7</h4>
+                    <p>Luôn sẵn sàng trả lời mọi câu hỏi và lo ngại của bạn</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics -->
+<section class="about-section">
+    <div class="container">
+        <h2 class="section-title">Con Số Nói Lên Tất Cả</h2>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <h3>10,000+</h3>
+                <p>Người Dùng Tin Tưởng</p>
+            </div>
+            <div class="stat-item">
+                <h3>50+</h3>
+                <p>Bác Sĩ Chuyên Khoa</p>
+            </div>
+            <div class="stat-item">
+                <h3>100+</h3>
+                <p>Chủ Đề Tư Vấn</p>
+            </div>
+            <div class="stat-item">
+                <h3>98%</h3>
+                <p>Hài Lòng Dịch Vụ</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Team Section -->
+<section class="about-section">
+    <div class="container">
+        <h2 class="section-title">Đội Ngũ Phát Triển</h2>
+        <div class="team-grid">
+            <div class="team-card">
+    <div class="team-image">
+        <i class="fas fa-user"></i>
+    </div>
+    <div class="team-info">
+        <div class="team-name">Trần Thế Anh</div>
+        <div class="team-role">Developer</div>
+    </div>
+</div>
+<div class="team-card">
+    <div class="team-image">
+        <i class="fas fa-user"></i>
+    </div>
+    <div class="team-info">
+        <div class="team-name">Nguyễn Văn Bảo</div>
+        <div class="team-role">Developer</div>
+    </div>
+</div>
+<div class="team-card">
+    <div class="team-image">
+        <i class="fas fa-user"></i>
+    </div>
+    <div class="team-info">
+        <div class="team-name">Võ Duy Khang</div>
+        <div class="team-role">Developer</div>
+    </div>
+</div>
+
+        </div>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section class="contact-section">
+    <div class="container">
+        <div class="contact-content">
+            <h2 style="text-align: center; font-size: 2.5rem; font-weight: 700; margin-bottom: 3rem;">Liên Hệ Với Chúng Tôi</h2>
+            
+            <div class="contact-grid">
+                <div class="contact-card">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <h4>Địa Chỉ</h4>
+                    <p>371 Nguyễn Kiệm, Phường 3<br>Quận Gò Vấp, TP. HCM</p>
+                </div>
+                <div class="contact-card">
+                    <i class="fas fa-phone"></i>
+                    <h4>Điện Thoại</h4>
+                    <p><a href="tel:0933033801" style="color: white; text-decoration: none;">0933 033 801</a></p>
+                </div>
+                <div class="contact-card">
+                    <i class="fas fa-envelope"></i>
+                    <h4>Email</h4>
+                    <p><a href="mailto:supporthealth4444@gmail.com" style="color: white; text-decoration: none;">supporthealth4444@gmail.com</a></p>
+                </div>
+            </div>
+
+            <div class="contact-form-container">
+                <h3 style="text-align: center; margin-bottom: 2rem; color: var(--text-primary);">Gửi Tin Nhắn Cho Chúng Tôi</h3>
+                <form method="POST" action="#" class="contact-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Họ Tên *</label>
+                                <input type="text" class="form-control" name="name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Email *</label>
+                                <input type="email" class="form-control" name="email" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Số Điện Thoại</label>
+                        <input type="tel" class="form-control" name="phone">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Chủ Đề *</label>
+                        <input type="text" class="form-control" name="subject" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nội Dung *</label>
+                        <textarea class="form-control" name="message" required></textarea>
+                    </div>
+                    <div style="text-align: center;">
+                        <button type="submit" class="btn-submit">
+                            <i class="fas fa-paper-plane me-2"></i>Gửi Tin Nhắn
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

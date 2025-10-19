@@ -4,8 +4,6 @@ from app.dao import dao_authen
 from app import controllers
 from app.extensions import db
 
-
-
 # Hàm này luôn truyền các info vào -> .html nao cung co
 @app.context_processor
 def common_attr():
@@ -25,16 +23,14 @@ app.add_url_rule("/", "index_controller", controllers.index_controller)
 app.add_url_rule("/home",'home', controllers.home)
 app.add_url_rule("/login",'login' ,controllers.login ,methods=['GET', 'POST'])
 app.add_url_rule("/logout",'logout_my_user',controllers.logout_my_user , methods=['get'])
-
 app.add_url_rule("/register", "register", controllers.register, methods=['GET', 'POST'])
 app.add_url_rule("/oauth" , 'login_oauth', controllers.login_oauth)
 app.add_url_rule("/callback" , 'oauth_callback', controllers.oauth_callback)
 app.add_url_rule("/chatbot", "chatbot", controllers.chatbot)
+app.add_url_rule("/profile", "profile", controllers.profile, methods=['GET', 'POST'])
+app.add_url_rule("/about", "about", controllers.about)
 
 if __name__ == '__main__':
-
-
     # with app.app_context():
     #     db.create_all()   # Tạo tất cả bảng trong database
-
     app.run(host="localhost", port=5050, debug=True)

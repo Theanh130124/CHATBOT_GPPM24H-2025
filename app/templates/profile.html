@@ -1,0 +1,250 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Hồ Sơ Cá Nhân{% endblock %}
+
+{% block additional_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="profile-header-content">
+            <div class="profile-avatar-section">
+                <img src="{{ current_user.avatar }}" alt="Avatar" class="profile-avatar">
+                <div class="profile-avatar-overlay">
+                    <i class="fas fa-camera"></i>
+                </div>
+            </div>
+            <div class="profile-info-summary">
+                <h1 class="profile-name">{{ current_user.first_name }} {{ current_user.last_name }}</h1>
+                <p class="profile-email">{{ current_user.email }}</p>
+                <p class="profile-role">
+                    {% if current_user.role.name == 'ADMIN' %}
+                        <span class="badge bg-danger">Quản trị viên</span>
+                    {% else %}
+                        <span class="badge bg-primary">Người dùng</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Tabs -->
+    <div class="profile-tabs">
+        <div class="tabs-container">
+            <button class="tab-btn active" data-tab="info">
+                <i class="fas fa-user me-2"></i>Thông tin cá nhân
+            </button>
+            <button class="tab-btn" data-tab="security">
+                <i class="fas fa-lock me-2"></i>Bảo mật
+            </button>
+        </div>
+
+        <!-- Tab 1: Thông tin cá nhân -->
+        <div class="tab-content active" id="info-tab">
+            <div class="profile-form-container">
+                <h2 class="form-title">Thông tin cá nhân</h2>
+                
+                <form method="POST" enctype="multipart/form-data" class="profile-form">
+                    {{ profile_form.hidden_tag() }}
+                    
+                    <input type="hidden" name="profile_submit" value="1">
+                    
+                    <!-- Dòng 1: Tên & Họ -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            {{ profile_form.first_name.label(class="form-label") }}
+                            {{ profile_form.first_name(class="form-control") }}
+                            {% if profile_form.first_name.errors %}
+                                <div class="form-error">
+                                    {% for error in profile_form.first_name.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ profile_form.last_name.label(class="form-label") }}
+                            {{ profile_form.last_name(class="form-control") }}
+                            {% if profile_form.last_name.errors %}
+                                <div class="form-error">
+                                    {% for error in profile_form.last_name.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+                        {{ profile_form.email.label(class="form-label") }}
+                        {{ profile_form.email(class="form-control") }}
+                        {% if profile_form.email.errors %}
+                            <div class="form-error">
+                                {% for error in profile_form.email.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Dòng 2: Số điện thoại & Giới tính -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            {{ profile_form.phone_number.label(class="form-label") }}
+                            {{ profile_form.phone_number(class="form-control") }}
+                            {% if profile_form.phone_number.errors %}
+                                <div class="form-error">
+                                    {% for error in profile_form.phone_number.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ profile_form.gender.label(class="form-label") }}
+                            {{ profile_form.gender(class="form-control") }}
+                        </div>
+                    </div>
+
+                    <!-- Dòng 3: Ngày sinh & Địa chỉ -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            {{ profile_form.date_of_birth.label(class="form-label") }}
+                            {{ profile_form.date_of_birth(class="form-control", type="date") }}
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ profile_form.address.label(class="form-label") }}
+                            {{ profile_form.address(class="form-control", rows="2") }}
+                            {% if profile_form.address.errors %}
+                                <div class="form-error">
+                                    {% for error in profile_form.address.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Avatar Upload -->
+                    <div class="form-group">
+                        {{ profile_form.avatar.label(class="form-label") }}
+                        {{ profile_form.avatar(class="form-control") }}
+                        {% if profile_form.avatar.errors %}
+                            <div class="form-error">
+                                {% for error in profile_form.avatar.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Kích thước tối đa: 5MB. Định dạng: JPG, PNG, GIF</small>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="form-actions">
+                        {{ profile_form.submit(class="btn btn-primary") }}
+                        <a href="/home" class="btn btn-secondary">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tab 2: Bảo mật -->
+        <div class="tab-content" id="security-tab">
+            <div class="profile-form-container">
+                <h2 class="form-title">Đổi mật khẩu</h2>
+                
+                <form method="POST" class="profile-form">
+                    {{ password_form.hidden_tag() }}
+                    
+                    <input type="hidden" name="password_submit" value="1">
+                    
+                    <!-- Mật khẩu hiện tại -->
+                    <div class="form-group">
+                        {{ password_form.current_password.label(class="form-label") }}
+                        {{ password_form.current_password(class="form-control", placeholder="Nhập mật khẩu hiện tại") }}
+                        {% if password_form.current_password.errors %}
+                            <div class="form-error">
+                                {% for error in password_form.current_password.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Mật khẩu mới -->
+                    <div class="form-group">
+                        {{ password_form.new_password.label(class="form-label") }}
+                        {{ password_form.new_password(class="form-control", placeholder="Nhập mật khẩu mới") }}
+                        {% if password_form.new_password.errors %}
+                            <div class="form-error">
+                                {% for error in password_form.new_password.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Xác nhận mật khẩu -->
+                    <div class="form-group">
+                        {{ password_form.confirm_password.label(class="form-label") }}
+                        {{ password_form.confirm_password(class="form-control", placeholder="Xác nhận mật khẩu mới") }}
+                        {% if password_form.confirm_password.errors %}
+                            <div class="form-error">
+                                {% for error in password_form.confirm_password.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Alert -->
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Lưu ý:</strong> Mật khẩu phải chứa ít nhất 6 ký tự
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="form-actions">
+                        {{ password_form.submit(class="btn btn-warning") }}
+                        <a href="/home" class="btn btn-secondary">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            
+            // Ẩn tất cả tab content
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Xóa active class từ tất cả buttons
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('active');
+            });
+            
+            // Hiển thị tab được chọn
+            document.getElementById(tabName + '-tab').classList.add('active');
+            this.classList.add('active');
+        });
+    });
+</script>
+{% endblock %}
+
+{% block additional_js %}
+<!-- Additional JS if needed -->
+{% endblock %}

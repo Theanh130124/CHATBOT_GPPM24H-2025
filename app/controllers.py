@@ -5,8 +5,8 @@ from flask_login import current_user , logout_user , login_required , login_user
 
 from app.models import RoleEnum , User
 from app import app , flow
-from .form import LoginForm , RegisterForm
-from .dao import dao_authen , dao_user
+from app.form import LoginForm , RegisterForm, ProfileForm, ChangePasswordForm
+from app.dao import dao_authen , dao_user
 from app.extensions import db
 
 import google.oauth2.id_token
@@ -108,7 +108,6 @@ def oauth_callback():
 
     except Exception as e:
         app.logger.error(f"OAuth Callback Error: {e}")
-
         return f"Login failed: {e}", 400
 
 
@@ -126,7 +125,6 @@ def register():
         address = form.address.data
         date_of_birth = form.date_of_birth.data
         gender = form.gender.data
-
 
         validation_errors = []
 
@@ -170,4 +168,67 @@ def register():
 
 @login_required
 def chatbot():
-    return render_template('chatbot.html')
+    return render_template("chatbot.html")
+
+
+@login_required
+def profile():
+    """Hiển thị và cập nhật hồ sơ cá nhân"""
+    profile_form = ProfileForm()
+    password_form = ChangePasswordForm()
+    
+    # Nếu form profile được submit
+    if profile_form.validate_on_submit() and request.method == 'POST' and 'profile_submit' in request.form:
+        avatar_url = current_user.avatar
+        
+        # Xử lý upload ảnh nếu có
+        if profile_form.avatar.data:
+            # TODO: Upload ảnh lên Cloudinary hoặc server
+            # Tạm thời giữ nguyên avatar cũ
+            avatar_url = current_user.avatar
+        
+        success, message = dao_user.update_user_profile(
+            user_id=current_user.user_id,
+            first_name=profile_form.first_name.data,
+            last_name=profile_form.last_name.data,
+            email=profile_form.email.data,
+            phone_number=profile_form.phone_number.data,
+            address=profile_form.address.data,
+            date_of_birth=profile_form.date_of_birth.data,
+            gender=profile_form.gender.data if profile_form.gender.data else None,
+            avatar_url=avatar_url
+        )
+        
+        if success:
+            flash(message, 'success')
+        else:
+            flash(message, 'danger')
+    
+    # Nếu form đổi mật khẩu được submit
+    elif password_form.validate_on_submit() and request.method == 'POST' and 'password_submit' in request.form:
+        success, message = dao_user.change_password(
+            user_id=current_user.user_id,
+            old_password=password_form.current_password.data,
+            new_password=password_form.new_password.data
+        )
+        
+        if success:
+            flash(message, 'success')
+        else:
+            flash(message, 'danger')
+    
+    # Pre-fill form với thông tin hiện tại
+    if request.method == 'GET':
+        profile_form.first_name.data = current_user.first_name
+        profile_form.last_name.data = current_user.last_name
+        profile_form.email.data = current_user.email
+        profile_form.phone_number.data = current_user.phone_number
+        profile_form.address.data = current_user.address
+        profile_form.date_of_birth.data = current_user.date_of_birth
+        profile_form.gender.data = current_user.gender.value if current_user.gender else 'OTHER'
+    
+    return render_template('profile.html', profile_form=profile_form, password_form=password_form)
+
+@app.route('/about')
+def about():
+    return render_template('about.html')

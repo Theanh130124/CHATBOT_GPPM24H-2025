@@ -8,17 +8,12 @@
 
 {% block content %}
 <div class="chatbot-wrapper">
-    <!-- Remove the sidebar toggle button -->
-    
-    <!-- Modernized chat history sidebar - Always visible -->
+    <!-- Chat History Sidebar -->
     <aside class="chatbot-sidebar" id="chatbot-sidebar">
         <div class="sidebar-header">
             <h3 class="sidebar-title">
-                <i class="fas fa-comments me-2"></i>Lịch Sử Chat
+                <i class="fas fa-comments"></i>Lịch Sử Chat
             </h3>
-            <button class="btn-new-chat" id="new-chat-btn" title="Cuộc trò chuyện mới">
-                <i class="fas fa-plus me-2"></i>New Chat
-            </button>
         </div>
 
         <div class="sidebar-content">
@@ -33,12 +28,15 @@
 
         <div class="sidebar-footer">
             <button class="btn-clear-history" id="clear-history-btn" title="Xóa tất cả lịch sử">
-                <i class="fas fa-trash me-2"></i>Xóa lịch sử
+                <i class="fas fa-trash"></i>Xóa lịch sử
+            </button>
+            <button class="btn-new-chat" id="new-chat-btn" title="Cuộc trò chuyện mới">
+                <i class="fas fa-plus"></i>New Chat
             </button>
         </div>
     </aside>
 
-    <!-- Main Chat Area - Unchanged -->
+    <!-- Main Chat Area -->
     <main class="chatbot-main">
         <div class="chatbot-container">
             <!-- Chat Header -->
@@ -127,7 +125,7 @@
     </main>
 </div>
 
-<!-- Info Modal - Unchanged -->
+<!-- Info Modal -->
 <div class="modal fade" id="infoModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
