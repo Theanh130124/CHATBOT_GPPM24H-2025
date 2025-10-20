@@ -130,3 +130,42 @@ class ChatMessage(BaseModel):
     content = db.Column(db.Text, nullable=False)
     message_type = db.Column(db.String(50), nullable=False)  # 'user' or 'bot'
     timestamp = db.Column(db.DateTime, default=datetime.now)
+
+
+class Post(BaseModel):
+    __tablename__ = 'post'
+
+    post_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id', ondelete='CASCADE'), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    image_url = db.Column(db.String(255))  # ảnh minh họa nếu có
+    is_public = db.Column(db.Boolean, default=True)
+
+    comments = db.relationship('Comment', backref='post', cascade='all, delete')
+    likes = db.relationship('Like', backref='post', cascade='all, delete')
+
+
+class Comment(BaseModel):
+    __tablename__ = 'comment'
+
+    comment_id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.post_id', ondelete='CASCADE'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id', ondelete='CASCADE'))
+    content = db.Column(db.Text, nullable=False)
+
+
+class Like(BaseModel):
+    __tablename__ = 'like'
+
+    like_id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.post_id', ondelete='CASCADE'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id', ondelete='CASCADE'))
+
+
+class Follow(BaseModel):
+    __tablename__ = 'follow'
+
+    follow_id = db.Column(db.Integer, primary_key=True)
+    follower_id = db.Column(db.Integer, db.ForeignKey('user.user_id', ondelete='CASCADE'))
+    followed_id = db.Column(db.Integer, db.ForeignKey('user.user_id', ondelete='CASCADE'))
