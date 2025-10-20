@@ -3,6 +3,7 @@ from flask_login import current_user
 from app.dao import dao_authen
 from app import controllers
 from app.extensions import db
+from app.controller import post_controller
 
 # Hàm này luôn truyền các info vào -> .html nao cung co
 @app.context_processor
@@ -29,6 +30,13 @@ app.add_url_rule("/callback" , 'oauth_callback', controllers.oauth_callback)
 app.add_url_rule("/chatbot", "chatbot", controllers.chatbot)
 app.add_url_rule("/profile", "profile", controllers.profile, methods=['GET', 'POST'])
 app.add_url_rule("/about", "about", controllers.about)
+
+#Social
+app.add_url_rule("/posts", "post_list", post_controller.post_list)
+app.add_url_rule("/posts/<int:post_id>", "post_detail", post_controller.post_detail)
+app.add_url_rule("/posts/create", "create_post", post_controller.create_post, methods=["GET", "POST"])
+app.add_url_rule("/posts/<int:post_id>/comment", "add_comment", post_controller.add_comment, methods=["POST"])
+app.add_url_rule("/posts/<int:post_id>/like", "toggle_like", post_controller.toggle_like, methods=["POST", "GET"])
 
 if __name__ == '__main__':
          #with app.app_context():

@@ -11,6 +11,7 @@ import pathlib
 # Import routes và models
 from app import  models
 from app import admin
+import cloudinary.uploader
 
 load_dotenv()
 app = Flask(__name__)
@@ -29,6 +30,12 @@ app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS') == 'True'
 app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 
+#Cloudinary Config
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET")
+)
 
 # Thêm vào các config khác
 # app.config['VNPAY_TMN_CODE'] = os.getenv('VNPAY_TMN_CODE')
