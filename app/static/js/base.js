@@ -163,97 +163,57 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = App;
 }
 
-// Scroll buttons functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const scrollTopBtn = document.getElementById('scrollTopBtn');
-    const scrollBottomBtn = document.getElementById('scrollBottomBtn');
-
-    // Show/hide scroll top button based on scroll position
-    window.addEventListener('scroll', function() {
-        if (window.pageYOffset > 300) {
-            scrollTopBtn.classList.remove('hidden');
+/**
+ * Scroll Buttons Controller
+ */
+class ScrollButtonsController {
+    constructor() {
+        this.scrollTopBtn = document.getElementById('scrollTopBtn');
+        this.scrollBottomBtn = document.getElementById('scrollBottomBtn');
+        
+        if (!this.scrollTopBtn || !this.scrollBottomBtn) return;
+        
+        this.bindEvents();
+    }
+    
+    bindEvents() {
+        // Scroll top
+        this.scrollTopBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        
+        // Scroll bottom
+        this.scrollBottomBtn.addEventListener('click', () => {
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        });
+        
+        // Show/hide buttons on scroll
+        window.addEventListener('scroll', () => this.toggleButtons());
+        this.toggleButtons();
+    }
+    
+    toggleButtons() {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        
+        // Show scroll-top button nếu scroll > 300px
+        if (scrollTop > 300) {
+            this.scrollTopBtn.classList.add('show');
+            this.scrollTopBtn.classList.remove('hidden');
         } else {
-            scrollTopBtn.classList.add('hidden');
+            this.scrollTopBtn.classList.remove('show');
+            this.scrollTopBtn.classList.add('hidden');
         }
-    });
-
-    // Scroll to top
-    scrollTopBtn.addEventListener('click', function() {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-    });
-
-    // Scroll to bottom
-    scrollBottomBtn.addEventListener('click', function() {
-        window.scrollTo({
-            top: document.body.scrollHeight,
-            behavior: 'smooth'
-        });
-    });
-
-    // Theme toggle functionality
-    const themeToggle = document.getElementById('theme-toggle');
-
-    function toggleTheme() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-
-        // Update button icon
-        const icon = themeToggle.querySelector('i');
-        if (icon) {
-            icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        
+        // Hide scroll-bottom button nếu gần cuối trang
+        if (scrollTop > docHeight - 100) {
+            this.scrollBottomBtn.classList.add('hide');
+        } else {
+            this.scrollBottomBtn.classList.remove('hide');
         }
-
-        // Update button title
-        themeToggle.setAttribute('title', newTheme === 'dark' ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối');
     }
+}
 
-    // Initialize theme
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-
-    // Update theme toggle icon based on saved theme
-    const themeIcon = themeToggle.querySelector('i');
-    if (themeIcon) {
-        themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-    }
-    themeToggle.setAttribute('title', savedTheme === 'dark' ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối');
-
-    // Add event listener for theme toggle
-    if (themeToggle) {
-        themeToggle.addEventListener('click', toggleTheme);
-    }
-
-    // Flash messages auto close
-    const flashMessages = document.querySelectorAll('.flash-message');
-    flashMessages.forEach(message => {
-        const closeBtn = message.querySelector('.flash-close');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', function() {
-                message.style.opacity = '0';
-                message.style.transform = 'translateX(100%)';
-                setTimeout(() => {
-                    message.remove();
-                }, 300);
-            });
-        }
-
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            if (message.parentNode) {
-                message.style.opacity = '0';
-                message.style.transform = 'translateX(100%)';
-                setTimeout(() => {
-                    if (message.parentNode) {
-                        message.remove();
-                    }
-                }, 300);
-            }
-        }, 5000);
-    });
+document.addEventListener('DOMContentLoaded', () => {
+    new ScrollButtonsController();
 });

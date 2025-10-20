@@ -1,7 +1,8 @@
 from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField, DateField, SelectField, FileField
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional, ValidationError, InputRequired
+from flask_wtf.file import FileAllowed
 from app.dao import dao_authen
-from wtforms.fields import StringField, EmailField, SubmitField, PasswordField, SelectField, DateField, IntegerField
-from wtforms.validators import InputRequired, Length, NumberRange, Regexp, DataRequired, ValidationError, Email, EqualTo, Optional
 
 class LoginForm(FlaskForm):
     username = StringField(validators=[InputRequired()],
@@ -82,3 +83,63 @@ class RegisterForm(FlaskForm):
 
         if dao_authen.check_phone_exists(phone_number.data):
             raise ValidationError('Số điện thoại đã tồn tại')
+
+class ProfileForm(FlaskForm):
+    """Form để cập nhật thông tin cá nhân"""
+    first_name = StringField('Tên', validators=[
+        DataRequired(message="Tên không được để trống"),
+        Length(min=2, max=100, message="Tên phải từ 2-100 ký tự")
+    ])
+    
+    last_name = StringField('Họ', validators=[
+        DataRequired(message="Họ không được để trống"),
+        Length(min=2, max=100, message="Họ phải từ 2-100 ký tự")
+    ])
+    
+    email = StringField('Email', validators=[
+        DataRequired(message="Email không được để trống"),
+        Email(message="Email không hợp lệ")
+    ])
+    
+    phone_number = StringField('Số điện thoại', validators=[
+        DataRequired(message="Số điện thoại không được để trống"),
+        Length(min=10, max=20, message="Số điện thoại không hợp lệ")
+    ])
+    
+    address = StringField('Địa chỉ', validators=[
+        DataRequired(message="Địa chỉ không được để trống"),
+        Length(min=5, max=255, message="Địa chỉ phải từ 5-255 ký tự")
+    ])
+    
+    date_of_birth = DateField('Ngày sinh', validators=[Optional()], format='%Y-%m-%d')
+    
+    gender = SelectField('Giới tính', choices=[
+        ('MALE', 'Nam'),
+        ('FEMALE', 'Nữ'),
+        ('OTHER', 'Khác')
+    ], validators=[Optional()])
+    
+    avatar = FileField('Ảnh đại diện', validators=[
+        FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Chỉ chấp nhận ảnh (jpg, jpeg, png, gif)')
+    ])
+    
+    submit = SubmitField('Cập nhật thông tin')
+
+
+class ChangePasswordForm(FlaskForm):
+    """Form để đổi mật khẩu"""
+    current_password = PasswordField('Mật khẩu hiện tại', validators=[
+        DataRequired(message="Mật khẩu hiện tại không được để trống")
+    ])
+    
+    new_password = PasswordField('Mật khẩu mới', validators=[
+        DataRequired(message="Mật khẩu mới không được để trống"),
+        Length(min=6, max=100, message="Mật khẩu phải từ 6-100 ký tự")
+    ])
+    
+    confirm_password = PasswordField('Xác nhận mật khẩu', validators=[
+        DataRequired(message="Xác nhận mật khẩu không được để trống"),
+        EqualTo('new_password', message="Mật khẩu xác nhận không khớp")
+    ])
+    
+    submit = SubmitField('Đổi mật khẩu')

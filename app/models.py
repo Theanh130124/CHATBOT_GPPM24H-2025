@@ -46,10 +46,9 @@ class User(BaseModel, UserMixin):
     )
     is_active = db.Column(db.Boolean, default=True)
 
-
     symptom = db.relationship('Symptom', backref='user', cascade='all, delete')
     skin_images = db.relationship('SkinImage', backref='user', cascade='all, delete')
-    chat_memories = db.relationship('ChatMemory', backref='user', cascade='all, delete')
+    conversations = db.relationship('ChatConversation', backref='user', cascade='all, delete')
 
     def get_id(self):
         return str(self.user_id)
@@ -60,7 +59,6 @@ class Symptom(BaseModel):
 
     symptom_id = db.Column(db.Integer, primary_key=True)
     description_text = db.Column(db.Text, nullable=False)
-
     user_id = db.Column(
         db.Integer,
         db.ForeignKey('user.user_id', ondelete='CASCADE'),
@@ -74,7 +72,6 @@ class SkinImage(BaseModel):
     __tablename__ = 'skinimage'
 
     skinimage_id = db.Column(db.Integer, primary_key=True)
-
     user_id = db.Column(
         db.Integer,
         db.ForeignKey('user.user_id', ondelete='CASCADE'),
@@ -87,12 +84,12 @@ class SkinImage(BaseModel):
     )
     image_path = db.Column(db.String(255), nullable=False)
 
-    # ADD THIS BACKREF:
     cv_predictions = db.relationship('CVPrediction', backref='skin_image', cascade='all, delete')
 
 
 class CVPrediction(db.Model):
     __tablename__ = 'cvprediction'
+
     cvprediction_id = db.Column(db.Integer, primary_key=True)
     skinimage_id = db.Column(
         db.Integer,
@@ -102,16 +99,34 @@ class CVPrediction(db.Model):
     confidence = db.Column(db.Float, nullable=False)
 
 
-class ChatMemory(BaseModel):
-    __tablename__ = 'chatmemory'
-    chatmemory_id = db.Column(db.Integer, primary_key=True)
+class ChatConversation(BaseModel):
+    __tablename__ = 'chatconversation'
 
+    conversation_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(
         db.Integer,
         db.ForeignKey('user.user_id', ondelete='CASCADE'),
-        nullable=True
+        nullable=False
     )
-    input_text = db.Column(db.Text, nullable=False)
-    cv_label = db.Column(db.String(100), nullable=True)
-    retrieved_text = db.Column(db.Text, nullable=True)
-    response_text = db.Column(db.Text, nullable=True)
+    title = db.Column(db.String(255), nullable=False, default="Cuộc trò chuyện mới")
+
+    messages = db.relationship('ChatMessage', backref='conversation', cascade='all, delete')
+
+
+class ChatMessage(BaseModel):
+    __tablename__ = 'chatmessage'
+
+    message_id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(
+        db.Integer,
+        db.ForeignKey('chatconversation.conversation_id', ondelete='CASCADE'),
+        nullable=False
+    )
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey('user.user_id', ondelete='CASCADE'),
+        nullable=False
+    )
+    content = db.Column(db.Text, nullable=False)
+    message_type = db.Column(db.String(50), nullable=False)  # 'user' or 'bot'
+    timestamp = db.Column(db.DateTime, default=datetime.now)
