@@ -141,7 +141,7 @@ class Post(BaseModel):
     content = db.Column(db.Text, nullable=False)
     image_url = db.Column(db.String(255))  # ảnh minh họa nếu có
     is_public = db.Column(db.Boolean, default=True)
-
+    user = db.relationship('User', backref='posts')
     comments = db.relationship('Comment', backref='post', cascade='all, delete')
     likes = db.relationship('Like', backref='post', cascade='all, delete')
 
