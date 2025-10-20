@@ -31,6 +31,6 @@ app.add_url_rule("/profile", "profile", controllers.profile, methods=['GET', 'PO
 app.add_url_rule("/about", "about", controllers.about)
 
 if __name__ == '__main__':
-    # with app.app_context():
-    #     db.create_all()   # Tạo tất cả bảng trong database
+         #with app.app_context():
+         #db.create_all()   # Tạo tất cả bảng trong database
     app.run(host="localhost", port=5050, debug=True)
