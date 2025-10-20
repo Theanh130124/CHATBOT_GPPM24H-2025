@@ -153,6 +153,7 @@ class Comment(BaseModel):
     post_id = db.Column(db.Integer, db.ForeignKey('post.post_id', ondelete='CASCADE'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id', ondelete='CASCADE'))
     content = db.Column(db.Text, nullable=False)
+    user = db.relationship('User', backref='comments')
 
 
 class Like(BaseModel):
