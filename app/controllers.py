@@ -373,7 +373,11 @@ def send_chat_message():
         image_data = data.get('image', None)
         conversation_id = data.get('conversation_id')
 
-        # Tìm hoặc tạo conversation -> NEW CHAT
+        # Validate input
+        if not message_text and not image_data:
+            return jsonify({'error': 'Message or image is required'}), 400
+
+        # Tìm hoặc tạo conversation
         if conversation_id:
             conversation = ChatConversation.query.filter_by(
                 conversation_id=conversation_id,
@@ -382,13 +386,14 @@ def send_chat_message():
             if not conversation:
                 return jsonify({'error': 'Conversation not found'}), 404
         else:
-            # Tạo conversation mới
+            # Tạo conversation mới với title từ message đầu tiên
+            title = message_text[:50] + "..." if message_text else "Cuộc trò chuyện mới"
             conversation = ChatConversation(
                 user_id=current_user.user_id,
-                title=message_text[:50] + "..." if message_text else "Cuộc trò chuyện mới"
+                title=title
             )
             db.session.add(conversation)
-            db.session.flush()
+            db.session.flush()  # Get the ID without committing
 
         # Lưu tin nhắn người dùng
         user_message = ChatMessage(
@@ -398,6 +403,7 @@ def send_chat_message():
             message_type='user'
         )
         db.session.add(user_message)
+        db.session.flush()
 
         response_text = ""
         cv_prediction = None
@@ -413,7 +419,7 @@ def send_chat_message():
                 disease_name, conf, raw_disease_name = cv_model.predict(image_bytes)
                 confidence = float(conf) if conf else 0.0
 
-                if disease_name:
+                if disease_name and confidence > 0.5:  # Only show if confidence > 50%
                     cv_prediction = f"Phân tích hình ảnh cho thấy dấu hiệu của: **{disease_name}** (độ tin cậy: {confidence:.1%})."
 
                     # Lưu hình ảnh và kết quả dự đoán
@@ -448,25 +454,21 @@ def send_chat_message():
                     except Exception as e:
                         app.logger.error(f"Error saving image data: {e}")
                 else:
-                    cv_prediction = "Không thể xác định rõ tình trạng da từ hình ảnh. Vui lòng thử lại với hình ảnh rõ hơn."
+                    cv_prediction = "Không thể xác định rõ tình trạng da từ hình ảnh. Vui lòng thử lại với hình ảnh rõ hơn hoặc mô tả thêm triệu chứng."
 
             except Exception as e:
                 app.logger.error(f"Image processing error: {e}")
                 cv_prediction = "Có lỗi xảy ra khi xử lý hình ảnh. Vui lòng thử lại."
 
         # Tạo câu hỏi tổng hợp cho RAG
-        if message_text and cv_prediction:
-            combined_query = f"{message_text}. {cv_prediction} Hãy tư vấn thêm về tình trạng này."
-        elif cv_prediction:
-            combined_query = f"{cv_prediction} Hãy tư vấn về tình trạng da này."
-        else:
-            combined_query = message_text
+        combined_query = message_text
+        if cv_prediction:
+            combined_query = f"{message_text}. {cv_prediction}" if message_text else cv_prediction
 
         # Lấy response từ RAG
         if combined_query.strip():
             try:
-                rag_response = rag_chatbot.get_rag_response(combined_query)
-                response_text = _clean_html_tags(rag_response) if rag_response else ""
+                response_text = rag_chatbot.get_rag_response(combined_query, conversation.conversation_id)
             except Exception as e:
                 app.logger.error(f"RAG Error: {e}")
                 response_text = "Xin lỗi, có lỗi xảy ra khi xử lý yêu cầu của bạn. Vui lòng thử lại."

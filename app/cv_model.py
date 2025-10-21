@@ -23,17 +23,26 @@ class SkinDiseaseModel:
             print("Tìm thấy model, đang load...")
 
         try:
+            # Thử load model với các config đơn giản hơn
             self.model = tf.keras.models.load_model(
                 model_path,
-                compile=False,
-                safe_mode=False,
-                custom_objects={'InputLayer': tf.keras.layers.InputLayer}
+                compile=False
             )
             app.logger.info(f"Model load thành công từ: {model_path}")
         except Exception as e:
-            app.logger.error(f"Lỗi khi load model: {e}")
-            self.model = None
-            return
+            app.logger.error(f"Lỗi khi load model lần 1: {e}")
+            try:
+                # Thử load với safe_mode=True
+                self.model = tf.keras.models.load_model(
+                    model_path,
+                    compile=False,
+                    safe_mode=True
+                )
+                app.logger.info(f"Model load thành công với safe_mode: {model_path}")
+            except Exception as e2:
+                app.logger.error(f"Lỗi khi load model lần 2: {e2}")
+                self.model = None
+                return
 
 
         self.img_size = (224, 224)
