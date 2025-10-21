@@ -1,17 +1,21 @@
 import uuid
-
+import datetime
+import base64
 from flask import render_template, redirect, request, url_for, session, flash, jsonify
 from flask_login import current_user, logout_user, login_required, login_user
 
-from app.models import RoleEnum, User, ChatConversation, ChatMessage
+from app.models import RoleEnum, User, ChatConversation, ChatMessage, Symptom, SkinImage, CVPrediction
 from app import app, flow
 from app.form import LoginForm, RegisterForm, ProfileForm, ChangePasswordForm
 from app.dao import dao_authen, dao_user
 from app.extensions import db
+from app.rag_chatbot import rag_chatbot
+from app.cv_model import cv_model
 
 import google.oauth2.id_token
 import google.auth.transport.requests
 import requests
+import cloudinary.uploader
 
 
 # ============ HOME & NAVIGATION ============
@@ -336,8 +340,184 @@ def profile():
     return render_template('profile.html', profile_form=profile_form, password_form=password_form)
 
 
+
+
+
+
 # ============ OTHER PAGES ============
 
 @app.route('/about')
 def about():
     return render_template('about.html')
+
+
+
+#---------- RAG - CNN -------------
+
+
+@app.route('/api/chat/send-message', methods=['POST'])
+@login_required
+def send_chat_message():
+    """Handle chat messages with both text and image"""
+    try:
+        data = request.get_json()
+        message_text = data.get('message', '')
+        image_data = data.get('image', None)
+        conversation_id = data.get('conversation_id')
+
+        # Tìm hoặc tạo conversation -> NEW CHAT
+        if conversation_id:
+            conversation = ChatConversation.query.filter_by(
+                conversation_id=conversation_id,
+                user_id=current_user.user_id
+            ).first()
+            if not conversation:
+                return jsonify({'error': 'Conversation not found'}), 404
+        else:
+            # Tạo conversation mới
+            conversation = ChatConversation(
+                user_id=current_user.user_id,
+                title=message_text[:50] + "..." if message_text else "Cuộc trò chuyện mới"
+            )
+            db.session.add(conversation)
+            db.session.flush()
+
+        # Lưu tin nhắn người dùng
+        user_message = ChatMessage(
+            conversation_id=conversation.conversation_id,
+            user_id=current_user.user_id,
+            content=message_text,
+            message_type='user'
+        )
+        db.session.add(user_message)
+
+        response_text = ""
+        cv_prediction = None
+        raw_disease_name = None
+        confidence = None
+
+        # Xử lý hình ảnh nếu có
+        if image_data:
+            try:
+                image_bytes = base64.b64decode(image_data.split(',')[1])
+
+                # Dự đoán bằng CNN model
+                disease_name, conf, raw_disease_name = cv_model.predict(image_bytes)
+                confidence = float(conf) if conf else 0.0
+
+                if disease_name and confidence > 0.3:  # Giảm ngưỡng confidence
+                    cv_prediction = f"Phân tích hình ảnh cho thấy dấu hiệu của: **{disease_name}** (độ tin cậy: {confidence:.1%})."
+
+                    # Lưu hình ảnh và kết quả dự đoán
+                    try:
+                        upload_result = cloudinary.uploader.upload(
+                            image_bytes,
+                            folder="skin_images"
+                        )
+
+                        symptom = Symptom(
+                            user_id=current_user.user_id,
+                            description_text=message_text if message_text else f"Phân tích hình ảnh da - {disease_name}"
+                        )
+                        db.session.add(symptom)
+                        db.session.flush()
+
+                        skin_image = SkinImage(
+                            user_id=current_user.user_id,
+                            symptom_id=symptom.symptom_id,
+                            image_path=upload_result['secure_url']
+                        )
+                        db.session.add(skin_image)
+                        db.session.flush()
+
+                        cv_pred = CVPrediction(
+                            skinimage_id=skin_image.skinimage_id,
+                            confidence=confidence,
+                            disease_name=raw_disease_name
+                        )
+                        db.session.add(cv_pred)
+
+                    except Exception as e:
+                        app.logger.error(f"Error saving image data: {e}")
+                else:
+                    cv_prediction = "Không thể xác định rõ tình trạng da từ hình ảnh. Vui lòng thử lại với hình ảnh rõ hơn."
+
+            except Exception as e:
+                app.logger.error(f"Image processing error: {e}")
+                cv_prediction = "Có lỗi xảy ra khi xử lý hình ảnh. Vui lòng thử lại."
+
+        # Tạo câu hỏi tổng hợp cho RAG
+        if message_text and cv_prediction:
+            combined_query = f"{message_text}. {cv_prediction} Hãy tư vấn thêm về tình trạng này."
+        elif cv_prediction:
+            combined_query = f"{cv_prediction} Hãy tư vấn về tình trạng da này."
+        else:
+            combined_query = message_text
+
+        # Lấy response từ RAG
+        if combined_query.strip():
+            try:
+                rag_response = rag_chatbot.get_rag_response(combined_query)
+                response_text = rag_response
+            except Exception as e:
+                app.logger.error(f"RAG Error: {e}")
+                response_text = "Xin lỗi, có lỗi xảy ra khi xử lý yêu cầu của bạn. Vui lòng thử lại."
+        else:
+            response_text = "Xin hãy mô tả vấn đề hoặc gửi hình ảnh để tôi có thể tư vấn."
+
+        # Lưu tin nhắn bot
+        bot_message = ChatMessage(
+            conversation_id=conversation.conversation_id,
+            user_id=current_user.user_id,
+            content=response_text,
+            message_type='bot'
+        )
+        db.session.add(bot_message)
+
+        # Cập nhật thời gian conversation
+        conversation.updated_at = datetime.datetime.utcnow()
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'conversation_id': conversation.conversation_id,
+            'response': response_text,
+            'cv_prediction': cv_prediction,
+            'disease_name': raw_disease_name,
+            'confidence': confidence
+        })
+
+    except Exception as e:
+        app.logger.error(f"Chat error: {e}")
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': 'Có lỗi xảy ra khi xử lý tin nhắn'
+        }), 500
+
+
+@app.route('/api/chat/upload-image', methods=['POST'])
+@login_required
+def upload_chat_image():
+    """Upload image for analysis"""
+    try:
+        if 'image' not in request.files:
+            return jsonify({'error': 'No image file'}), 400
+
+        image_file = request.files['image']
+        if image_file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+
+        # Convert to base64 for frontend preview
+        image_bytes = image_file.read()
+        image_b64 = base64.b64encode(image_bytes).decode('utf-8')
+
+        return jsonify({
+            'success': True,
+            'image_data': f"data:image/jpeg;base64,{image_b64}"
+        })
+
+    except Exception as e:
+        app.logger.error(f"Image upload error: {e}")
+        return jsonify({'error': 'Upload failed'}), 500

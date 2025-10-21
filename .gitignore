@@ -5,7 +5,8 @@ __pycache__/
 
 # C extensions
 *.so
-
+app/model_cv/best_skin_disease_model_final.h5
+app/model_cv/best_skin_disease_model_final.keras
 app/oauth_config.json
 
 # Distribution / packaging

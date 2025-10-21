@@ -69,3 +69,7 @@ mail.init_app(app)
 migrate.init_app(app, db)
 login.init_app(app)
 
+
+#import RAG CV cho rag
+from app.rag_chatbot import rag_chatbot
+from app.cv_model import cv_model

@@ -96,6 +96,8 @@ class CVPrediction(db.Model):
         db.ForeignKey('skinimage.skinimage_id', ondelete='CASCADE'),
         nullable=False
     )
+    disease_name = db.Column(db.String(255), nullable=True)  # Thêm trường lưu tên bệnh
+    predicted_at = db.Column(db.DateTime, default=datetime.now)
     confidence = db.Column(db.Float, nullable=False)
 
 

@@ -1,3 +1,4 @@
+// static/js/chatbot.js
 class Chatbot {
   constructor() {
     this.theme = localStorage.getItem("chatbot-theme") || "light"
@@ -5,11 +6,13 @@ class Chatbot {
     this.apiBaseUrl = "/api/chat"
     this.currentConversationId = null
     this.conversations = []
+    this.currentImageData = null
 
     this.initializeElements()
     this.bindEvents()
     this.applyTheme()
     this.loadConversations()
+    this.setupImageUpload()
   }
 
   initializeElements() {
@@ -29,6 +32,46 @@ class Chatbot {
     }
   }
 
+  setupImageUpload() {
+    // Create hidden file input
+    if (!document.getElementById('image-upload')) {
+      const fileInput = document.createElement('input')
+      fileInput.type = 'file'
+      fileInput.id = 'image-upload'
+      fileInput.accept = 'image/*'
+      fileInput.style.display = 'none'
+      document.body.appendChild(fileInput)
+    }
+
+    // Create image upload button
+    if (!document.getElementById('image-upload-btn')) {
+      const uploadBtn = document.createElement('button')
+      uploadBtn.type = 'button'
+      uploadBtn.id = 'image-upload-btn'
+      uploadBtn.className = 'btn btn-outline-secondary'
+      uploadBtn.title = 'Tải lên hình ảnh'
+      uploadBtn.innerHTML = '<i class="fas fa-camera"></i>'
+
+      const inputGroup = document.querySelector('.input-group')
+      if (inputGroup) {
+        inputGroup.insertBefore(uploadBtn, inputGroup.firstChild)
+      }
+    }
+
+    // Create image preview container
+    if (!document.getElementById('image-preview')) {
+      const previewDiv = document.createElement('div')
+      previewDiv.id = 'image-preview'
+      previewDiv.style.display = 'none'
+      previewDiv.style.marginTop = '10px'
+
+      const inputContainer = document.querySelector('.chat-input-container')
+      if (inputContainer) {
+        inputContainer.appendChild(previewDiv)
+      }
+    }
+  }
+
   bindEvents() {
     this.elements.sendButton.addEventListener("click", () => this.sendMessage())
     this.elements.chatInput.addEventListener("keypress", (e) => {
@@ -39,19 +82,25 @@ class Chatbot {
     })
 
     this.elements.clearChat.addEventListener("click", () => this.clearCurrentChat())
-    this.elements.themeToggle.addEventListener("click", () => this.toggleTheme())
+
+    if (this.elements.themeToggle) {
+      this.elements.themeToggle.addEventListener("click", () => this.toggleTheme())
+    }
+
+    // Image upload events
+    const uploadBtn = document.getElementById('image-upload-btn')
+    const fileInput = document.getElementById('image-upload')
+
+    if (uploadBtn && fileInput) {
+      uploadBtn.addEventListener('click', () => fileInput.click())
+      fileInput.addEventListener('change', (e) => this.handleImageUpload(e))
+    }
 
     if (this.elements.infoBtn) {
       this.elements.infoBtn.addEventListener("click", () => {
         const infoModal = document.getElementById("infoModal")
-        if (infoModal) {
-          const bootstrap = window.bootstrap
-          if (bootstrap) {
-            const Modal = bootstrap.Modal
-            new Modal(infoModal).show()
-          } else {
-            console.error("Bootstrap library is not loaded.")
-          }
+        if (infoModal && window.bootstrap) {
+          new window.bootstrap.Modal(infoModal).show()
         }
       })
     }
@@ -72,17 +121,80 @@ class Chatbot {
     })
   }
 
-  handleSuggestion(topic) {
-    const suggestions = {
-      acne: "Tôi muốn biết cách trị mụn trứng cá hiệu quả",
-      "dry-skin": "Làm sao để chăm sóc da khô bong tróc?",
-      allergy: "Tôi bị dị ứng mỹ phẩm, phải làm sao?",
-      psoriasis: "Bệnh vảy nến có cách điều trị nào không?",
-      sunscreen: "Nên dùng kem chống nắng như thế nào?",
+  handleImageUpload(event) {
+    const file = event.target.files[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.match('image.*')) {
+      alert('Vui lòng chọn file hình ảnh (JPEG, PNG, etc.)')
+      return
     }
 
-    if (suggestions[topic]) {
-      this.elements.chatInput.value = suggestions[topic]
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Kích thước file không được vượt quá 5MB')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      this.currentImageData = e.target.result
+      this.showImagePreview(e.target.result)
+    }
+    reader.onerror = () => {
+      alert('Có lỗi xảy ra khi đọc file. Vui lòng thử lại.')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  showImagePreview(imageData) {
+    const previewDiv = document.getElementById('image-preview')
+    if (!previewDiv) return
+
+    previewDiv.innerHTML = `
+      <div class="image-preview-container">
+        <img src="${imageData}" alt="Preview" class="img-thumbnail" style="max-width: 100px; max-height: 100px;">
+        <button type="button" class="btn-remove-image btn btn-sm btn-danger">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    `
+    previewDiv.style.display = 'block'
+
+    // Add remove button event
+    const removeBtn = previewDiv.querySelector('.btn-remove-image')
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => this.clearImagePreview())
+    }
+  }
+
+  clearImagePreview() {
+    this.currentImageData = null
+    const previewDiv = document.getElementById('image-preview')
+    const fileInput = document.getElementById('image-upload')
+
+    if (previewDiv) {
+      previewDiv.style.display = 'none'
+      previewDiv.innerHTML = ''
+    }
+
+    if (fileInput) {
+      fileInput.value = ''
+    }
+  }
+
+  handleSuggestion(topic) {
+    const suggestions = {
+      acne: "Cách trị mụn trứng cá hiệu quả",
+      "dry-skin": "Chăm sóc da khô đúng cách",
+      allergy: "Xử lý dị ứng mỹ phẩm",
+      psoriasis: "Điều trị bệnh vảy nến",
+      sunscreen: "Sử dụng kem chống nắng hiệu quả"
+    }
+
+    if (this.elements.chatInput) {
+      this.elements.chatInput.value = suggestions[topic] || topic
       this.sendMessage()
     }
   }
@@ -113,6 +225,7 @@ class Chatbot {
 
   renderConversationsSidebar(conversations) {
     const historyContainer = this.elements.chatHistory
+    if (!historyContainer) return
 
     if (!conversations || conversations.length === 0) {
       historyContainer.innerHTML = `
@@ -127,26 +240,62 @@ class Chatbot {
     historyContainer.innerHTML = conversations
       .map(
         (conv) => `
-          <div class="chat-item" data-conversation-id="${conv.id}">
+          <div class="chat-item ${conv.id === this.currentConversationId ? 'active' : ''}"
+               data-conversation-id="${conv.id}">
             <div class="chat-item-icon">
               <i class="fas fa-comments"></i>
             </div>
             <div class="chat-item-content">
-              <div class="chat-item-title">${conv.title}</div>
-              <div class="chat-item-time">${conv.updatedAt}</div>
+              <div class="chat-item-title">${this.escapeHtml(conv.title)}</div>
+              <div class="chat-item-time">${this.escapeHtml(conv.updatedAt)}</div>
             </div>
+            <button class="delete-conversation" data-id="${conv.id}" title="Xóa cuộc trò chuyện">
+              <i class="fas fa-times"></i>
+            </button>
           </div>
-        `,
+        `
       )
       .join("")
 
     // Add click handlers to conversation items
     document.querySelectorAll(".chat-item").forEach((item) => {
-      item.addEventListener("click", async () => {
-        const convId = item.getAttribute("data-conversation-id")
-        await this.loadConversation(Number.parseInt(convId))
+      item.addEventListener("click", async (e) => {
+        if (!e.target.closest('.delete-conversation')) {
+          const convId = item.getAttribute("data-conversation-id")
+          await this.loadConversation(Number.parseInt(convId))
+        }
       })
     })
+
+    // Add delete conversation handlers
+    document.querySelectorAll(".delete-conversation").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation()
+        const convId = btn.getAttribute("data-id")
+        await this.deleteConversation(Number.parseInt(convId))
+      })
+    })
+  }
+
+  async deleteConversation(conversationId) {
+    if (!confirm('Bạn có chắc muốn xóa cuộc trò chuyện này?')) return
+
+    try {
+      const response = await fetch(`/api/chat/conversations/${conversationId}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) throw new Error('Failed to delete conversation')
+
+      if (this.currentConversationId === conversationId) {
+        await this.startNewConversation()
+      }
+
+      await this.loadConversations()
+    } catch (error) {
+      console.error('Error deleting conversation:', error)
+      alert('Có lỗi xảy ra khi xóa cuộc trò chuyện')
+    }
   }
 
   async loadConversation(conversationId) {
@@ -156,18 +305,22 @@ class Chatbot {
       if (!response.ok) throw new Error("Failed to load messages")
 
       const messages = await response.json()
-      this.elements.chatMessages.innerHTML = ""
 
-      // Display all messages
-      messages.forEach((msg) => {
-        this.renderMessage({
-          content: msg.content,
-          type: msg.type,
-          timestamp: msg.timestamp,
+      if (this.elements.chatMessages) {
+        this.elements.chatMessages.innerHTML = ""
+
+        // Display all messages
+        messages.forEach((msg) => {
+          this.renderMessage({
+            content: msg.content,
+            type: msg.type,
+            timestamp: msg.timestamp,
+          })
         })
-      })
 
-      this.scrollToBottom()
+        this.scrollToBottom()
+        await this.loadConversations() // Refresh sidebar for active state
+      }
     } catch (error) {
       console.error("Error loading conversation:", error)
     }
@@ -194,213 +347,89 @@ class Chatbot {
         this.renderConversationsSidebar(this.conversations)
       }
 
-      this.elements.chatMessages.innerHTML = ""
-      this.addWelcomeMessage()
+      if (this.elements.chatMessages) {
+        this.elements.chatMessages.innerHTML = ""
+        this.addWelcomeMessage()
+      }
     } catch (error) {
       console.error("Error creating conversation:", error)
     }
   }
 
   async sendMessage() {
-    const message = this.elements.chatInput.value.trim()
+    const message = this.elements.chatInput?.value.trim() || ''
+    const imageData = this.currentImageData
 
-    if (!message || this.isTyping) return
+    if ((!message && !imageData) || this.isTyping) {
+      if (!message && !imageData) {
+        alert('Vui lòng nhập tin nhắn hoặc tải lên hình ảnh')
+      }
+      return
+    }
 
     // Create conversation if not exists
     if (!this.currentConversationId) {
       await this.startNewConversation()
     }
 
-    this.addMessageToUI(message, "user")
-    this.elements.chatInput.value = ""
+    this.addMessageToUI(message, imageData, "user")
 
-    // Save user message to database
-    try {
-      await this.saveMessageToDatabase(message, "user")
-    } catch (error) {
-      console.error("Error saving user message:", error)
+    if (this.elements.chatInput) {
+      this.elements.chatInput.value = ""
     }
+
+    this.clearImagePreview()
 
     this.showTypingIndicator()
 
     try {
-      const botResponse = await this.getBotResponse(message)
-      this.hideTypingIndicator()
-      this.addMessageToUI(botResponse, "bot")
+      // Send message to backend with RAG and CNN integration
+      const response = await fetch('/api/chat/send-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: message,
+          image: imageData,
+          conversation_id: this.currentConversationId
+        })
+      })
 
-      // Save bot response to database
-      await this.saveMessageToDatabase(botResponse, "bot")
+      const data = await response.json()
+
+      if (data.success) {
+        this.hideTypingIndicator()
+
+        // Hiển thị kết quả phân tích hình ảnh nếu có
+        let responseContent = data.response
+        if (data.cv_prediction) {
+          responseContent = `
+            <div class="cv-result">
+              <div class="cv-prediction">
+                <i class="fas fa-microscope me-2"></i>
+                ${data.cv_prediction}
+                ${data.confidence ? `<div class="disease-confidence">Độ tin cậy: ${(data.confidence * 100).toFixed(1)}%</div>` : ''}
+              </div>
+              <div class="rag-response">${data.response}</div>
+            </div>
+          `
+        }
+
+        this.addMessageToUI(responseContent, null, "bot")
+        await this.loadConversations()
+      } else {
+        throw new Error(data.error || 'Failed to get response')
+      }
     } catch (error) {
       this.hideTypingIndicator()
       const errorMsg = "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau."
-      this.addMessageToUI(errorMsg, "bot")
+      this.addMessageToUI(errorMsg, null, "bot")
       console.error("Chatbot error:", error)
     }
   }
 
-  async saveMessageToDatabase(content, type) {
-    try {
-      const response = await fetch(`${this.apiBaseUrl}/conversations/${this.currentConversationId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: content,
-          type: type,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to save message")
-      }
-    } catch (error) {
-      console.error("Error saving message to database:", error)
-    }
-  }
-
-  async getBotResponse(userMessage) {
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1500))
-
-    const responses = {
-      mụn: `**Về vấn đề mụn trứng cá:**
-
-🔍 **Nguyên nhân thường gặp:**
-- Tăng tiết bã nhờn
-- Vi khuẩn P. acnes
-- Tắc nghẽn lỗ chân lông
-- Yếu tố nội tiết tố
-
-💊 **Điều trị cơ bản:**
-1. **Làm sạch**: Sữa rửa mặt dịu nhẹ 2 lần/ngày
-2. **Điều trị**:
-   - Salicylic Acid (mụn đầu đen, mụn ẩn)
-   - Benzoyl peroxide (mụn viêm)
-   - Retinoid (mụn nang, mụn bọc)
-3. **Dưỡng ẩm**: Kem dưỡng không gây bít tắc
-4. **Chống nắng**: SPF 30+ hàng ngày
-
-⚠️ **Lưu ý**: Tránh nặn mụ, hạn chế trang điểm nặng. Nếu mụn nặng, nên gặp bác sĩ da liễu.`,
-
-      khô: `**Chăm sóc da khô:**
-
-🌿 **Nguyên tắc cơ bản:**
-- Làm sạch dịu nhẹ, tránh xà phòng
-- Dưỡng ẩm ngay sau khi rửa mặt
-- Bảo vệ da khỏi tác nhân gây khô
-
-💧 **Thành phần nên có:**
-- Hyaluronic Acid (giữ ẩm)
-- Ceramide (phục hồi hàng rào bảo vệ)
-- Glycerin (dưỡng ẩm)
-- Niacinamide (cải thiện hàng rào da)
-
-🚫 **Cần tránh:**
-- Nước nóng khi rửa mặt
-- Sản phẩm chứa cồn khô
-- Tẩy da chết quá mức
-
-🛡️ **Bảo vệ**: Luôn dùng kem chống nắng phổ rộng`,
-
-      "dị ứng": `**Xử lý dị ứng da:**
-
-🆘 **Cấp cứu (nếu có):**
-- Khó thở, sưng mặt/lưỡi
-- Phát ban toàn thân
-- Choáng váng, chóng mặt
-→ **Đến bệnh viện ngay**
-
-🏠 **Xử lý tại nhà:**
-1. Ngừng ngay sản phẩm nghi ngờ
-2. Rửa mặt với nước sạch
-3. Chườm mát giảm ngứa
-4. Uống nhiều nước
-
-💊 **Thuốc có thể dùng:**
-- Kháng histamine (theo chỉ định)
-- Kem corticoid nhẹ (ngắn ngày)
-
-🔍 **Phòng ngừa:**
-- Test sản phẩm trước khi dùng
-- Chọn sản phẩm lành tính, không hương liệu`,
-
-      nám: `**Điều trị nám da:**
-
-🎯 **Nguyên tắc điều trị:**
-1. **Chống nắng nghiêm ngặt** - Quan trọng nhất!
-2. **Ức chế sản xuất melanin**
-3. **Tăng tẩy tế bào chết**
-4. **Chống viêm, chống oxy hóa**
-
-💊 **Thành phần hiệu quả:**
-- Hydroquinone (theo chỉ định bác sĩ)
-- Vitamin C, Niacinamide
-- Azelaic Acid, Tranexamic Acid
-- Retinoid
-
-☀️ **Chống nắng:**
-- SPF 50+, PA++++
-- Thoa lại sau 2-3 giờ
-- Dùng hàng ngày, kể cả ngày mưa
-
-⚠️ **Lưu ý**: Điều trị nám cần kiên trì 3-6 tháng. Nên khám bác sĩ để có phác đồ phù hợp.`,
-
-      nắng: `**Chống nắng cho da:**
-
-☀️ **Tại sao cần chống nắng:**
-- Ngăn ngừa ung thư da
-- Phòng lão hóa da sớm
-- Giảm nám, tàn nhang
-- Bảo vệ hàng rào da
-
-🛡️ **Chỉ số SPF:**
-- SPF 30: Chặn 97% tia UV
-- SPF 50: Chặn 98% tia UV
-- SPF 50+: Chặn 99%+ tia UV
-
-📋 **Cách sử dụng đúng:**
-1. Thoa đủ lượng (1/4 thìa cà phê cho mặt)
-2. Thoa 15 phút trước khi ra nắng
-3. Thoa lại mỗi 2-3 giờ
-4. Dùng hàng ngày, kể cả ngày mưa
-
-💡 **Lời khuyên:**
-- Kết hợp kem và viên uống
-- Tránh nắng 10-16h
-- Mặc quần áo che phủ`,
-
-      default: `Cảm ơn bạn đã chia sẻ thông tin!
-
-🤖 **Dựa trên mô tả của bạn, tôi có một số khuyến nghị:**
-
-🔍 **Chăm sóc da cơ bản:**
-- Làm sạch phù hợp với loại da
-- Dưỡng ẩm đầy đủ
-- Chống nắng nghiêm ngặt
-- Tẩy da chết 1-2 lần/tuần
-
-💡 **Lời khuyên quan trọng:**
-- Uống đủ nước (2-3 lít/ngày)
-- Ăn uống cân bằng, nhiều rau xanh
-- Ngủ đủ giấc, giảm căng thẳng
-- Tránh thức khuya, hút thuốc
-
-⚠️ **Lưu ý y tế:**
-Thông tin tôi cung cấp chỉ mang tính tham khảo. Để có chẩn đoán chính xác, bạn nên đến gặp bác sĩ da liễu.
-
-Bạn có thể mô tả chi tiết hơn về tình trạng da của mình không?`,
-    }
-
-    const lowerMessage = userMessage.toLowerCase()
-    for (const [key, response] of Object.entries(responses)) {
-      if (key !== "default" && lowerMessage.includes(key)) {
-        return response
-      }
-    }
-
-    return responses.default
-  }
-
-  addMessageToUI(content, type) {
+  addMessageToUI(content, imageData, type) {
     const timestamp = new Date().toLocaleTimeString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",
@@ -408,6 +437,7 @@ Bạn có thể mô tả chi tiết hơn về tình trạng da của mình khôn
 
     this.renderMessage({
       content,
+      imageData,
       type,
       timestamp,
     })
@@ -416,44 +446,63 @@ Bạn có thể mô tả chi tiết hơn về tình trạng da của mình khôn
   }
 
   renderMessage(message) {
+    if (!this.elements.chatMessages) return
+
     const messageElement = document.createElement("div")
     messageElement.className = `message ${message.type}`
-    messageElement.innerHTML = `
-      <div class="message-avatar">
-        <i class="fas fa-${message.type === "user" ? "user" : "robot"}"></i>
-      </div>
-      <div class="message-content">
-        ${this.formatMessageContent(message.content)}
-        <div class="message-time">${message.timestamp}</div>
-      </div>
-    `
 
+    let messageHTML = ''
+    if (message.type === "user") {
+      messageHTML = `
+        <div class="message-content">
+          ${message.imageData ? `<img src="${message.imageData}" class="chat-image-preview" alt="Hình ảnh đã tải lên">` : ''}
+          ${message.content ? `<p>${this.formatMessageContent(message.content)}</p>` : ''}
+          <div class="message-time">${this.escapeHtml(message.timestamp)}</div>
+        </div>
+        <div class="message-avatar">
+          <i class="fas fa-user"></i>
+        </div>
+      `
+    } else {
+      messageHTML = `
+        <div class="message-avatar">
+          <i class="fas fa-robot"></i>
+        </div>
+        <div class="message-content">
+          ${this.formatMessageContent(message.content)}
+          <div class="message-time">${this.escapeHtml(message.timestamp)}</div>
+        </div>
+      `
+    }
+
+    messageElement.innerHTML = messageHTML
     this.elements.chatMessages.appendChild(messageElement)
   }
 
   formatMessageContent(content) {
-    return content
+    if (!content) return ''
+
+    // Xử lý markdown đơn giản và emoji
+    return this.escapeHtml(content)
       .replace(/\n/g, "<br>")
       .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
       .replace(/\*(.*?)\*/g, "<em>$1</em>")
-      .replace(/→/g, "→")
-      .replace(/🔍/g, "🔍")
-      .replace(/💊/g, "💊")
-      .replace(/⚠️/g, "⚠️")
-      .replace(/🆘/g, "🆘")
-      .replace(/🏠/g, "🏠")
-      .replace(/🎯/g, "🎯")
-      .replace(/☀️/g, "☀️")
-      .replace(/🤖/g, "🤖")
-      .replace(/💡/g, "💡")
-      .replace(/🌿/g, "🌿")
-      .replace(/💧/g, "💧")
-      .replace(/🚫/g, "🚫")
-      .replace(/🛡️/g, "🛡️")
-      .replace(/📋/g, "📋")
+      .replace(/`(.*?)`/g, "<code>$1</code>")
+  }
+
+  escapeHtml(unsafe) {
+    if (!unsafe) return ''
+    return unsafe
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;")
   }
 
   showTypingIndicator() {
+    if (!this.elements.chatMessages) return
+
     this.isTyping = true
     const typingElement = document.createElement("div")
     typingElement.className = "message bot loading"
@@ -483,14 +532,18 @@ Bạn có thể mô tả chi tiết hơn về tình trạng da của mình khôn
   }
 
   scrollToBottom() {
+    if (!this.elements.chatMessages) return
+
     setTimeout(() => {
       this.elements.chatMessages.scrollTop = this.elements.chatMessages.scrollHeight
     }, 100)
   }
 
   async clearCurrentChat() {
-    if (confirm("Bạn có chắc muốn xóa cuộc trò chuyện hiện tại?")) {
-      try {
+    if (!confirm("Bạn có chắc muốn xóa cuộc trò chuyện hiện tại?")) return
+
+    try {
+      if (this.currentConversationId) {
         const response = await fetch(`${this.apiBaseUrl}/conversations/${this.currentConversationId}`, {
           method: "DELETE",
         })
@@ -498,56 +551,68 @@ Bạn có thể mô tả chi tiết hơn về tình trạng da của mình khôn
         if (!response.ok) throw new Error("Failed to delete conversation")
 
         this.conversations = this.conversations.filter((c) => c.id !== this.currentConversationId)
-
-        if (this.elements.chatHistory) {
-          this.renderConversationsSidebar(this.conversations)
-        }
-
-        await this.startNewConversation()
-      } catch (error) {
-        console.error("Error deleting conversation:", error)
       }
+
+      if (this.elements.chatHistory) {
+        this.renderConversationsSidebar(this.conversations)
+      }
+
+      await this.startNewConversation()
+    } catch (error) {
+      console.error("Error deleting conversation:", error)
+      alert('Có lỗi xảy ra khi xóa cuộc trò chuyện')
     }
   }
 
   async clearAllHistory() {
-    if (confirm("Bạn có chắc muốn xóa tất cả lịch sử trò chuyện? Hành động này không thể hoàn tác.")) {
-      try {
-        // Delete all conversations
-        for (const conv of this.conversations) {
-          await fetch(`${this.apiBaseUrl}/conversations/${conv.id}`, {
-            method: "DELETE",
-          })
-        }
+    if (!confirm("Bạn có chắc muốn xóa tất cả lịch sử trò chuyện? Hành động này không thể hoàn tác.")) return
 
-        this.conversations = []
+    try {
+      // Delete all conversations
+      const deletePromises = this.conversations.map(conv =>
+        fetch(`${this.apiBaseUrl}/conversations/${conv.id}`, { method: "DELETE" })
+      )
+
+      await Promise.all(deletePromises)
+
+      this.conversations = []
+
+      if (this.elements.chatMessages) {
         this.elements.chatMessages.innerHTML = ""
-
-        if (this.elements.chatHistory) {
-          this.renderConversationsSidebar([])
-        }
-
-        await this.startNewConversation()
-      } catch (error) {
-        console.error("Error clearing history:", error)
       }
+
+      if (this.elements.chatHistory) {
+        this.renderConversationsSidebar([])
+      }
+
+      await this.startNewConversation()
+    } catch (error) {
+      console.error("Error clearing history:", error)
+      alert('Có lỗi xảy ra khi xóa lịch sử')
     }
   }
 
   addWelcomeMessage() {
+    if (!this.elements.chatMessages) return
+
     const welcomeMessage = `👋 **Xin chào! Tôi là chatbot tư vấn da liễu thông minh**
 
 Tôi có thể giúp bạn với các vấn đề về:
 
-🎯 **Chẩn đoán sơ bộ** các bệnh da liễu thường gặp
-💊 **Tư vấn điều trị** mụn, nám, tàn nhang, lão hóa
-🌿 **Hướng dẫn chăm sóc da** hàng ngày
-⚠️ **Xử lý dị ứng** và kích ứng da
-📋 **Tư vấn sản phẩm** chăm sóc da phù hợp
+🎯 **Phân tích hình ảnh** - Gửi ảnh để nhận chẩn đoán sơ bộ
+💊 **Tư vấn điều trị** - Mụn, nám, viêm da, dị ứng
+🌿 **Chăm sóc da** - Routine phù hợp với loại da
+⚠️ **Xử lý khẩn cấp** - Dị ứng, kích ứng da
+📋 **Kiến thức chuyên môn** - Dựa trên tài liệu y khoa
 
-Hãy chọn chủ đề bên dưới hoặc mô tả vấn đề của bạn!`
+**Bạn có thể:**
+- Gửi hình ảnh da để phân tích AI
+- Mô tả triệu chứng để được tư vấn
+- Hỏi về bất kỳ vấn đề da liễu nào
 
-    this.addMessageToUI(welcomeMessage, "bot")
+Hãy bắt đầu bằng cách gửi tin nhắn hoặc hình ảnh!`
+
+    this.addMessageToUI(welcomeMessage, null, "bot")
   }
 
   toggleTheme() {
@@ -558,13 +623,22 @@ Hãy chọn chủ đề bên dưới hoặc mô tả vấn đề của bạn!`
 
   applyTheme() {
     document.documentElement.setAttribute("data-theme", this.theme)
-    const icon = this.elements.themeToggle.querySelector("i")
+    const icon = this.elements.themeToggle?.querySelector("i")
     if (icon) {
       icon.className = this.theme === "light" ? "fas fa-moon" : "fas fa-sun"
     }
   }
 }
 
+// Khởi tạo chatbot khi trang tải xong
 document.addEventListener("DOMContentLoaded", () => {
-  window.chatbot = new Chatbot()
+  // Đợi một chút để đảm bảo tất cả element đã sẵn sàng
+  setTimeout(() => {
+    try {
+      window.chatbot = new Chatbot()
+      console.log('Chatbot initialized successfully')
+    } catch (error) {
+      console.error('Failed to initialize chatbot:', error)
+    }
+  }, 100)
 })
