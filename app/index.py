@@ -39,6 +39,6 @@ app.add_url_rule("/posts/<int:post_id>/comment", "add_comment", post_controller.
 app.add_url_rule("/posts/<int:post_id>/like", "toggle_like", post_controller.toggle_like, methods=["POST", "GET"])
 
 if __name__ == '__main__':
-         #with app.app_context():
-         #db.create_all()   # Tạo tất cả bảng trong database
+    # with app.app_context():
+    #     db.create_all()   # Tạo tất cả bảng trong database
     app.run(host="localhost", port=5050, debug=True)
