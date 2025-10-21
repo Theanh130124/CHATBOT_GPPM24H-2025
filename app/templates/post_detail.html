@@ -25,18 +25,39 @@
               </div>
             </div>
 
-            {% if post.image_url %}
-            <div class="text-center mb-4">
-              <img src="{{ post.image_url }}"
-                   class="img-fluid rounded-4 shadow-sm post-image"
-                   alt="Hình minh họa bài viết">
-            </div>
+            <!-- Nhiều ảnh minh họa -->
+            {% if post.images %}
+            {% if post.images|length == 1 %}
+              <div class="text-center mb-4">
+                <img src="{{ post.images[0].image_url }}"
+                     class="img-fluid rounded-4 shadow-sm post-image"
+                     alt="Ảnh minh họa bài viết">
+              </div>
+            {% else %}
+              <div id="postCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
+                <div class="carousel-inner rounded-4 shadow-sm">
+                  {% for img in post.images %}
+                  <div class="carousel-item {% if loop.first %}active{% endif %}">
+                    <img src="{{ img.image_url }}" class="d-block w-100 post-image" alt="Ảnh {{ loop.index }}">
+                  </div>
+                  {% endfor %}
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#postCarousel" data-bs-slide="prev">
+                  <span class="carousel-control-prev-icon"></span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#postCarousel" data-bs-slide="next">
+                  <span class="carousel-control-next-icon"></span>
+                </button>
+              </div>
+            {% endif %}
             {% endif %}
 
+            <!-- Nội dung -->
             <div class="post-content fs-5 lh-lg text-dark mb-4">
               {{ post.content | safe }}
             </div>
 
+            <!-- Like -->
             <form method="POST" action="{{ url_for('toggle_like', post_id=post.post_id) }}">
               <button type="submit"
                       class="btn {% if user_liked %}btn-danger{% else %}btn-outline-danger{% endif %} px-3 rounded-pill">
@@ -108,59 +129,9 @@
 </div>
 
 <style>
-/* Nền tổng thể */
-.post-page-bg {
-  background-color: #f3f6fb;
-  min-height: 100vh;
-}
-
-/* Bài viết */
-.post-card {
-  background-color: #ffffff;
-}
-.post-image {
-  max-height: 550px;
-  object-fit: cover;
-  border-radius: 16px;
-}
-.post-content {
-  color: #2d2d2d;
-}
-
-/* Bình luận section */
-.comments-section {
-  background-color: #f8faff;
-}
-
-/* Form bình luận */
-.comment-form {
-  background-color: #eef3fb;
-  border: 1px solid #d7e2f2;
-}
-.comment-form textarea {
-  resize: none;
-  background-color: #fff;
-}
-
-/* Comment item */
-.comment-item {
-  background-color: #ffffff;
-  transition: background-color 0.25s ease;
-  border-bottom: 1px solid #e9eff9 !important;
-}
-.comment-item:hover {
-  background-color: #f4f7fc;
-}
-
-/* Avatar */
-.rounded-circle {
-  border: 2px solid #f0f0f0;
-}
-
-/* Nút thích */
-.btn-outline-danger:hover {
-  background-color: #dc3545;
-  color: white;
-}
+.post-page-bg { background-color: #f3f6fb; min-height: 100vh; }
+.post-image { max-height: 550px; object-fit: cover; border-radius: 16px; }
+.comment-item:hover { background-color: #f4f7fc; }
+.carousel-inner img { height: 500px; object-fit: cover; }
 </style>
 {% endblock %}

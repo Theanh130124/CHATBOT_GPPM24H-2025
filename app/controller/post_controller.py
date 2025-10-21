@@ -2,12 +2,15 @@ from flask import render_template, request, redirect, url_for, flash
 from flask_login import current_user, login_required
 from app.dao import dao_post
 import cloudinary.uploader
+from app.models import Post
 from flask import current_app
 
 # Danh sách bài viết
 @login_required
 def post_list():
-    posts = dao_post.get_all_posts()
+    page = request.args.get("page", 1, type=int)
+    per_page = 5  # số bài trên 1 trang
+    posts = Post.query.order_by(Post.created_at.desc()).paginate(page=page, per_page=per_page)
     return render_template("post_list.html", posts=posts)
 
 # Chi tiết bài viết
@@ -31,23 +34,22 @@ def create_post():
     if request.method == "POST":
         title = request.form.get("title")
         content = request.form.get("content")
-        image_file = request.files.get("image")
+        image_files = request.files.getlist("images")
 
-        image_url = None
-        if image_file and image_file.filename != "":
-            try:
-                upload_result = cloudinary.uploader.upload(
-                    image_file,
-                    folder="posts/",  # Thư mục trên Cloudinary
-                    public_id=None,   # để Cloudinary tự tạo ID duy nhất
-                    overwrite=True,
-                    resource_type="image"
-                )
-                image_url = upload_result.get("secure_url")
-            except Exception as e:
-                flash(f"Lỗi khi upload ảnh: {e}", "danger")
+        image_urls = []
+        for image_file in image_files:
+            if image_file and image_file.filename != "":
+                try:
+                    upload_result = cloudinary.uploader.upload(
+                        image_file,
+                        folder="posts/",
+                        resource_type="image"
+                    )
+                    image_urls.append(upload_result.get("secure_url"))
+                except Exception as e:
+                    flash(f"Lỗi khi upload ảnh: {e}", "danger")
 
-        dao_post.create_post(current_user.user_id, title, content, image_url)
+        dao_post.create_post(current_user.user_id, title, content, image_urls)
         flash("Đăng bài thành công!", "success")
         return redirect(url_for("post_list"))
 
