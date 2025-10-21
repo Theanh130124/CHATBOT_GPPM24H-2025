@@ -18,6 +18,14 @@ import requests
 import cloudinary.uploader
 
 
+def _clean_html_tags(text):
+    """Remove HTML tags from text"""
+    import re
+    if not text:
+        return text
+    clean = re.compile('<.*?>')
+    return re.sub(clean, '', text)
+
 # ============ HOME & NAVIGATION ============
 
 def index():
@@ -405,7 +413,7 @@ def send_chat_message():
                 disease_name, conf, raw_disease_name = cv_model.predict(image_bytes)
                 confidence = float(conf) if conf else 0.0
 
-                if disease_name and confidence > 0.3:  # Giảm ngưỡng confidence
+                if disease_name:
                     cv_prediction = f"Phân tích hình ảnh cho thấy dấu hiệu của: **{disease_name}** (độ tin cậy: {confidence:.1%})."
 
                     # Lưu hình ảnh và kết quả dự đoán
@@ -458,7 +466,7 @@ def send_chat_message():
         if combined_query.strip():
             try:
                 rag_response = rag_chatbot.get_rag_response(combined_query)
-                response_text = rag_response
+                response_text = _clean_html_tags(rag_response) if rag_response else ""
             except Exception as e:
                 app.logger.error(f"RAG Error: {e}")
                 response_text = "Xin lỗi, có lỗi xảy ra khi xử lý yêu cầu của bạn. Vui lòng thử lại."

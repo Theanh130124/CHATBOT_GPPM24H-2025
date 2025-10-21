@@ -32,45 +32,58 @@ class Chatbot {
     }
   }
 
-  setupImageUpload() {
+setupImageUpload() {
     // Create hidden file input
-    if (!document.getElementById('image-upload')) {
-      const fileInput = document.createElement('input')
-      fileInput.type = 'file'
-      fileInput.id = 'image-upload'
-      fileInput.accept = 'image/*'
-      fileInput.style.display = 'none'
-      document.body.appendChild(fileInput)
+    let fileInput = document.getElementById('image-upload')
+    if (!fileInput) {
+        fileInput = document.createElement('input')
+        fileInput.type = 'file'
+        fileInput.id = 'image-upload'
+        fileInput.accept = 'image/*'
+        fileInput.style.display = 'none'
+        document.body.appendChild(fileInput)
     }
 
-    // Create image upload button
-    if (!document.getElementById('image-upload-btn')) {
-      const uploadBtn = document.createElement('button')
-      uploadBtn.type = 'button'
-      uploadBtn.id = 'image-upload-btn'
-      uploadBtn.className = 'btn btn-outline-secondary'
-      uploadBtn.title = 'Tải lên hình ảnh'
-      uploadBtn.innerHTML = '<i class="fas fa-camera"></i>'
+    // Create image upload button - SỬA LẠI CÁCH THÊM NÚT
+    let uploadBtn = document.getElementById('image-upload-btn')
+    if (!uploadBtn) {
+        uploadBtn = document.createElement('button')
+        uploadBtn.type = 'button'
+        uploadBtn.id = 'image-upload-btn'
+        uploadBtn.className = 'image-upload-btn'
+        uploadBtn.title = 'Tải lên hình ảnh'
+        uploadBtn.innerHTML = '<i class="fas fa-camera"></i>'
 
-      const inputGroup = document.querySelector('.input-group')
-      if (inputGroup) {
-        inputGroup.insertBefore(uploadBtn, inputGroup.firstChild)
-      }
+        const inputGroup = document.querySelector('.input-group')
+        if (inputGroup) {
+            // Thêm nút vào trước input
+            inputGroup.insertBefore(uploadBtn, inputGroup.firstChild)
+        }
     }
 
     // Create image preview container
-    if (!document.getElementById('image-preview')) {
-      const previewDiv = document.createElement('div')
-      previewDiv.id = 'image-preview'
-      previewDiv.style.display = 'none'
-      previewDiv.style.marginTop = '10px'
+    let previewDiv = document.getElementById('image-preview')
+    if (!previewDiv) {
+        previewDiv = document.createElement('div')
+        previewDiv.id = 'image-preview'
+        previewDiv.className = 'image-preview-container'
+        previewDiv.style.display = 'none'
+        previewDiv.style.marginTop = '10px'
 
-      const inputContainer = document.querySelector('.chat-input-container')
-      if (inputContainer) {
-        inputContainer.appendChild(previewDiv)
-      }
+        const inputContainer = document.querySelector('.chat-input-container')
+        if (inputContainer) {
+            // Thêm preview vào sau input group
+            const inputGroup = inputContainer.querySelector('.input-group')
+            if (inputGroup) {
+                inputContainer.insertBefore(previewDiv, inputGroup.nextSibling)
+            }
+        }
     }
-  }
+
+    // Bind events
+    uploadBtn.addEventListener('click', () => fileInput.click())
+    fileInput.addEventListener('change', (e) => this.handleImageUpload(e))
+}
 
   bindEvents() {
     this.elements.sendButton.addEventListener("click", () => this.sendMessage())
@@ -199,29 +212,31 @@ class Chatbot {
     }
   }
 
-  async loadConversations() {
+async loadConversations() {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/conversations`)
-      if (!response.ok) throw new Error("Failed to load conversations")
+        const response = await fetch(`${this.apiBaseUrl}/conversations`)
+        if (!response.ok) throw new Error("Failed to load conversations")
 
-      this.conversations = await response.json()
+        this.conversations = await response.json()
 
-      // Display conversations in sidebar
-      if (this.elements.chatHistory) {
-        this.renderConversationsSidebar(this.conversations)
-      }
+        // Display conversations in sidebar
+        if (this.elements.chatHistory) {
+            this.renderConversationsSidebar(this.conversations)
+        }
 
-      // Load first conversation or create new one
-      if (this.conversations.length > 0) {
-        await this.loadConversation(this.conversations[0].id)
-      } else {
-        await this.startNewConversation()
-      }
+        // CHỈ load conversation đầu tiên nếu chưa có conversation hiện tại
+        if (this.conversations.length > 0 && !this.currentConversationId) {
+            await this.loadConversation(this.conversations[0].id)
+        } else if (this.conversations.length === 0 && !this.currentConversationId) {
+            await this.startNewConversation()
+        }
     } catch (error) {
-      console.error("Error loading conversations:", error)
-      await this.startNewConversation()
+        console.error("Error loading conversations:", error)
+        if (!this.currentConversationId) {
+            await this.startNewConversation()
+        }
     }
-  }
+}
 
   renderConversationsSidebar(conversations) {
     const historyContainer = this.elements.chatHistory
@@ -300,31 +315,44 @@ class Chatbot {
 
   async loadConversation(conversationId) {
     try {
-      this.currentConversationId = conversationId
-      const response = await fetch(`${this.apiBaseUrl}/conversations/${conversationId}/messages`)
-      if (!response.ok) throw new Error("Failed to load messages")
+        this.currentConversationId = conversationId
+        const response = await fetch(`${this.apiBaseUrl}/conversations/${conversationId}/messages`)
+        if (!response.ok) throw new Error("Failed to load messages")
 
-      const messages = await response.json()
+        const messages = await response.json()
 
-      if (this.elements.chatMessages) {
-        this.elements.chatMessages.innerHTML = ""
+        if (this.elements.chatMessages) {
+            this.elements.chatMessages.innerHTML = ""
 
-        // Display all messages
-        messages.forEach((msg) => {
-          this.renderMessage({
-            content: msg.content,
-            type: msg.type,
-            timestamp: msg.timestamp,
-          })
-        })
+            // Display all messages
+            messages.forEach((msg) => {
+                this.renderMessage({
+                    content: msg.content,
+                    type: msg.type,
+                    timestamp: msg.timestamp,
+                })
+            })
 
-        this.scrollToBottom()
-        await this.loadConversations() // Refresh sidebar for active state
-      }
+            this.scrollToBottom()
+            // CHỈ cập nhật sidebar, không gọi lại loadConversations
+            this.updateSidebarActiveState()
+        }
     } catch (error) {
-      console.error("Error loading conversation:", error)
+        console.error("Error loading conversation:", error)
     }
-  }
+}
+
+updateSidebarActiveState() {
+    const items = document.querySelectorAll('.chat-item')
+    items.forEach(item => {
+        const convId = item.getAttribute("data-conversation-id")
+        if (Number.parseInt(convId) === this.currentConversationId) {
+            item.classList.add('active')
+        } else {
+            item.classList.remove('active')
+        }
+    })
+}
 
   async startNewConversation() {
     try {
@@ -445,7 +473,7 @@ class Chatbot {
     this.scrollToBottom()
   }
 
-  renderMessage(message) {
+renderMessage(message) {
     if (!this.elements.chatMessages) return
 
     const messageElement = document.createElement("div")
@@ -453,31 +481,31 @@ class Chatbot {
 
     let messageHTML = ''
     if (message.type === "user") {
-      messageHTML = `
-        <div class="message-content">
-          ${message.imageData ? `<img src="${message.imageData}" class="chat-image-preview" alt="Hình ảnh đã tải lên">` : ''}
-          ${message.content ? `<p>${this.formatMessageContent(message.content)}</p>` : ''}
-          <div class="message-time">${this.escapeHtml(message.timestamp)}</div>
-        </div>
-        <div class="message-avatar">
-          <i class="fas fa-user"></i>
-        </div>
-      `
+        messageHTML = `
+            <div class="message-content">
+                ${message.imageData ? `<img src="${message.imageData}" class="chat-image-preview" alt="Hình ảnh đã tải lên" style="max-width: 200px; max-height: 200px; border-radius: 8px; margin-bottom: 8px;">` : ''}
+                ${message.content ? `<p>${this.formatMessageContent(message.content)}</p>` : ''}
+                <div class="message-time">${this.escapeHtml(message.timestamp)}</div>
+            </div>
+            <div class="message-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+        `
     } else {
-      messageHTML = `
-        <div class="message-avatar">
-          <i class="fas fa-robot"></i>
-        </div>
-        <div class="message-content">
-          ${this.formatMessageContent(message.content)}
-          <div class="message-time">${this.escapeHtml(message.timestamp)}</div>
-        </div>
-      `
+        messageHTML = `
+            <div class="message-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="message-content">
+                ${this.formatMessageContent(message.content)}
+                <div class="message-time">${this.escapeHtml(message.timestamp)}</div>
+            </div>
+        `
     }
 
     messageElement.innerHTML = messageHTML
     this.elements.chatMessages.appendChild(messageElement)
-  }
+}
 
   formatMessageContent(content) {
     if (!content) return ''

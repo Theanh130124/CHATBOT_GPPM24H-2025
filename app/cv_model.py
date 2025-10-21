@@ -1,8 +1,7 @@
+# cv_model.py
 import tensorflow as tf
 import numpy as np
-# from tensorflow.keras.preprocessing import image
 from keras_preprocessing import image
-
 from PIL import Image
 import io
 import os
@@ -10,8 +9,21 @@ from app import app
 
 
 class SkinDiseaseModel:
-    def __init__(self, model_path='model_cv/best_skin_disease_model_final.keras'):
-        self.model = tf.keras.models.load_model(model_path)
+    def __init__(self, model_path='best_skin_disease_model_final.keras'):
+
+        try:
+            # Thử load model với các tùy chọn tương thích
+            self.model = tf.keras.models.load_model(
+                model_path,
+                compile=False,  # Tạm thời không compile
+                safe_mode=False  # Tắt safe mode để bỏ qua một số lỗi
+            )
+        except Exception as e:
+            app.logger.error(f"Error loading model: {e}")
+            # Fallback: tạo model mới hoặc xử lý lỗi
+            self.model = None
+            return
+
         self.img_size = (224, 224)
 
         # Danh sách các bệnh da liễu
@@ -40,7 +52,7 @@ class SkinDiseaseModel:
             '8. Seborrheic Keratoses and other Benign Tumors - 1.8k': 'Dày sừng bã nhờn và U lành tính',
             '9. Tinea Ringworm Candidiasis and other Fungal Infections - 1.7k': 'Nấm da, Nấm candida'
         }
-#Xử lý ảnh đầu vào
+
     def preprocess_image(self, img_data):
         try:
             if hasattr(img_data, 'read'):
@@ -61,20 +73,21 @@ class SkinDiseaseModel:
         except Exception as e:
             app.logger.error(f"Image preprocessing error: {e}")
             return None
-#Lấy tên bệnh
+
     def get_friendly_name(self, raw_class_name):
         return self.friendly_class_names.get(raw_class_name, raw_class_name)
 
-
-#Thực hiện dự đoán -> lấy max của ma trận xác suất của các nhãn trên .
     def predict(self, img_data):
         try:
+            if self.model is None:
+                return "Model không khả dụng", 0.0, None
+
             processed_img = self.preprocess_image(img_data)
             if processed_img is None:
                 return None, 0.0, None
 
             prediction = self.model.predict(processed_img)
-            confidence = np.max(prediction)
+            confidence = np.max(prediction)  #lấy max
             class_idx = np.argmax(prediction)
 
             if class_idx < len(self.raw_class_names):
@@ -91,6 +104,9 @@ class SkinDiseaseModel:
             return None, 0.0, None
 
 
-# Global CNN model instance
-cv_model = SkinDiseaseModel()
-
+# Global CNN model instance với xử lý lỗi
+try:
+    cv_model = SkinDiseaseModel()
+except Exception as e:
+    app.logger.error(f"Failed to initialize CV model: {e}")
+    cv_model = None
