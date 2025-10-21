@@ -3,12 +3,14 @@ import math
 import time
 import pandas as pd
 import requests
+from dotenv import load_dotenv
+load_dotenv()
 
 INPUT_CSV = "dalieu_articles.csv"
 TITLE_COLUMN = "title"
 OUTPUT_DIR = "./output_benh_da_lieu"
 BATCH_SIZE = 20
-API_KEY = "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"
+API_KEY = os.getenv("OPENAI_API_KEY_CRAWLER")
 MODEL = "openai/gpt-oss-20b:free"
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)

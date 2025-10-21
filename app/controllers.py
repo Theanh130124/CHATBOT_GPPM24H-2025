@@ -104,6 +104,7 @@ def oauth_callback():
             )
             db.session.add(user)
             db.session.flush()
+            db.session.commit()
         login_user(user)
 
         return redirect(url_for("index_controller"))

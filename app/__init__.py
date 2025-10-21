@@ -37,11 +37,6 @@ cloudinary.config(
     api_secret=os.getenv("CLOUDINARY_API_SECRET")
 )
 
-# Thêm vào các config khác
-# app.config['VNPAY_TMN_CODE'] = os.getenv('VNPAY_TMN_CODE')
-# app.config['VNPAY_HASH_SECRET'] = os.getenv('VNPAY_HASH_SECRET')
-# app.config['VNPAY_URL'] = os.getenv('VNPAY_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html')
-# app.config['VNPAY_RETURN_URL'] = os.getenv('VNPAY_RETURN_URL', 'http://localhost:5000/payment/vnpay_return')
 
 
 GOOGLE_CLIENT_SECRETS_FILE = os.path.join(pathlib.Path(__file__).parent, "oauth_config.json")
@@ -51,9 +46,21 @@ flow = Flow.from_client_secrets_file(
     scopes=["https://www.googleapis.com/auth/userinfo.profile",
             "https://www.googleapis.com/auth/userinfo.email",
             "openid"],
-    redirect_uri="http://localhost:5000/callback"
+    redirect_uri="http://localhost:5050/callback"
 
 )
+
+# RAG and CNN
+app.config['QDRANT_API_KEY'] = os.getenv('QDRANT_API_KEY')
+app.config['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
+app.config['MODEL_LLM_NAME'] = os.getenv('MODEL_LLM_NAME')
+app.config['MODEL_EMBEDDING_NAME'] = os.getenv('MODEL_EMBEDDING_NAME')
+app.config['MODEL_CROSS_ENCODER_NAME'] = os.getenv('MODEL_CROSS_ENCODER_NAME')
+app.config['COLLECTION_NAME'] = os.getenv('COLLECTION_NAME')
+app.config['QDRANT_URL'] = os.getenv('QDRANT_URL')
+
+
+
 # App settings
 PAGE_SIZE = 8
 # Khởi tạo các extension
