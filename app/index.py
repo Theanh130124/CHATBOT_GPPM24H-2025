@@ -3,7 +3,7 @@ from flask_login import current_user
 from app.dao import dao_authen
 from app import controllers
 from app.extensions import db
-from app.controller import post_controller
+from app.api import post_controller
 
 # Hàm này luôn truyền các info vào -> .html nao cung co
 @app.context_processor
