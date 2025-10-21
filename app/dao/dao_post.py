@@ -1,17 +1,22 @@
 from app.extensions import db
-from app.models import Post, Comment, Like, Follow
+from app.models import Post, Comment, Like, Follow, PostImage
 from datetime import datetime
 
 #Post
-def create_post(user_id, title, content, image_url=None):
+def create_post(user_id, title, content, image_urls=None):
     post = Post(
         user_id=user_id,
         title=title,
         content=content,
-        image_url=image_url,
         created_at=datetime.now()
     )
     db.session.add(post)
+    db.session.flush()  # để có post_id trước khi thêm ảnh
+
+    if image_urls:
+        for url in image_urls:
+            db.session.add(PostImage(post_id=post.post_id, image_url=url))
+
     db.session.commit()
     return post
 

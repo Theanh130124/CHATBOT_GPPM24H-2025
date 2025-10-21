@@ -28,13 +28,10 @@
 
             <!-- Ảnh minh hoạ -->
             <div class="mb-3">
-              <label class="form-label fw-semibold">Ảnh minh hoạ</label>
-              <input type="file" name="image" accept="image/*" class="form-control" id="imageInput">
-              <div class="mt-3 text-center" id="imagePreviewContainer" style="display:none;">
-                <img id="imagePreview" src="" class="img-fluid rounded-4 shadow-sm"
-                     style="max-height: 300px; object-fit: cover;" alt="Preview ảnh minh hoạ">
-              </div>
-            </div>
+  <label class="form-label fw-semibold">Ảnh minh hoạ</label>
+  <input type="file" name="images" accept="image/*" class="form-control" id="imageInput" multiple>
+  <div class="mt-3" id="imagePreviewContainer" style="display:flex; gap:10px; flex-wrap:wrap;"></div>
+</div>
 
             <!-- Nút -->
             <div class="text-end">
@@ -103,13 +100,20 @@
 
 <script>
 document.getElementById("imageInput").addEventListener("change", function(event) {
-  const file = event.target.files[0];
-  const preview = document.getElementById("imagePreview");
+  const files = event.target.files;
   const container = document.getElementById("imagePreviewContainer");
+  container.innerHTML = "";
 
-  if (file) {
-    preview.src = URL.createObjectURL(file);
-    container.style.display = "block";
+  if (files.length > 0) {
+    for (const file of files) {
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(file);
+      img.classList.add("img-thumbnail");
+      img.style.height = "120px";
+      img.style.objectFit = "cover";
+      container.appendChild(img);
+    }
+    container.style.display = "flex";
   } else {
     container.style.display = "none";
   }

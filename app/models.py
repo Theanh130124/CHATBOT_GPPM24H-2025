@@ -132,6 +132,16 @@ class ChatMessage(BaseModel):
     timestamp = db.Column(db.DateTime, default=datetime.now)
 
 
+class PostImage(db.Model):
+    __tablename__ = 'post_image'
+
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.post_id', ondelete='CASCADE'), nullable=False)
+    image_url = db.Column(db.String(255), nullable=False)
+
+    post = db.relationship('Post', back_populates='images')
+
+
 class Post(BaseModel):
     __tablename__ = 'post'
 
@@ -139,12 +149,12 @@ class Post(BaseModel):
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id', ondelete='CASCADE'), nullable=False)
     title = db.Column(db.String(255), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    image_url = db.Column(db.String(255))  # ảnh minh họa nếu có
     is_public = db.Column(db.Boolean, default=True)
+
     user = db.relationship('User', backref='posts')
     comments = db.relationship('Comment', backref='post', cascade='all, delete')
     likes = db.relationship('Like', backref='post', cascade='all, delete')
-
+    images = db.relationship('PostImage', back_populates='post', cascade='all, delete-orphan')
 
 class Comment(BaseModel):
     __tablename__ = 'comment'
