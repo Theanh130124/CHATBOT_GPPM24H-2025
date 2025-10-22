@@ -562,30 +562,28 @@
 
 /* Chat Image Preview */
 .chat-image-preview {
-  max-width: 200px;
-  max-height: 200px;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  border: 2px solid var(--border-color);
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border: 2px solid var(--border-color);
+    display: block;
 }
-
 /* CV Results */
 .cv-result {
-  border-left: 4px solid var(--primary-color);
-  padding-left: 12px;
-  margin-bottom: 8px;
+    border-left: 4px solid var(--primary-color);
+    padding-left: 12px;
+    margin: 8px 0;
 }
 
 .cv-prediction {
-  background: rgba(0, 123, 255, 0.1);
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  font-weight: 600;
-  color: var(--primary-color);
-  border: 1px solid rgba(0, 123, 255, 0.2);
-  display: flex;
-  align-items: flex-start;
+    background: rgba(0, 123, 255, 0.1);
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: var(--primary-color);
+    border: 1px solid rgba(0, 123, 255, 0.2);
 }
 
 .cv-prediction i {
@@ -769,4 +767,19 @@
     background: var(--bg-secondary);
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
+}
+
+.message.bot .message-content {
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+.message.bot .message-content ul,
+.message.bot .message-content ol {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.message.bot .message-content li {
+    margin-bottom: 4px;
 }

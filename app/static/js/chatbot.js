@@ -385,26 +385,27 @@ updateSidebarActiveState() {
     }
   }
 
-  async sendMessage() {
+async sendMessage() {
     const message = this.elements.chatInput?.value.trim() || ''
     const imageData = this.currentImageData
 
     if ((!message && !imageData) || this.isTyping) {
-      if (!message && !imageData) {
-        alert('Vui lòng nhập tin nhắn hoặc tải lên hình ảnh')
-      }
-      return
+        if (!message && !imageData) {
+            alert('Vui lòng nhập tin nhắn hoặc tải lên hình ảnh')
+        }
+        return
     }
 
     // Create conversation if not exists
     if (!this.currentConversationId) {
-      await this.startNewConversation()
+        await this.startNewConversation()
     }
 
+    // Hiển thị tin nhắn user ngay lập tức với ảnh preview
     this.addMessageToUI(message, imageData, "user")
 
     if (this.elements.chatInput) {
-      this.elements.chatInput.value = ""
+        this.elements.chatInput.value = ""
     }
 
     this.clearImagePreview()
@@ -412,67 +413,76 @@ updateSidebarActiveState() {
     this.showTypingIndicator()
 
     try {
-      // Send message to backend with RAG and CNN integration
-      const response = await fetch('/api/chat/send-message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: message,
-          image: imageData,
-          conversation_id: this.currentConversationId
+        const response = await fetch('/api/chat/send-message', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: message,
+                image: imageData,
+                conversation_id: this.currentConversationId
+            })
         })
-      })
 
-      const data = await response.json()
+        const data = await response.json()
 
-      if (data.success) {
-        this.hideTypingIndicator()
+        if (data.success) {
+            this.hideTypingIndicator()
 
-        // Hiển thị kết quả phân tích hình ảnh nếu có
-        let responseContent = data.response
-        if (data.cv_prediction) {
-          responseContent = `
-            <div class="cv-result">
-              <div class="cv-prediction">
-                <i class="fas fa-microscope me-2"></i>
-                ${data.cv_prediction}
-                ${data.confidence ? `<div class="disease-confidence">Độ tin cậy: ${(data.confidence * 100).toFixed(1)}%</div>` : ''}
-              </div>
-              <div class="rag-response">${data.response}</div>
-            </div>
-          `
+            // Cập nhật tin nhắn user với URL ảnh thực từ server (nếu có)
+            if (data.image_url) {
+                const userMessages = document.querySelectorAll('.message.user')
+                const lastUserMessage = userMessages[userMessages.length - 1]
+                if (lastUserMessage) {
+                    const imgElement = lastUserMessage.querySelector('.chat-image-preview')
+                    if (imgElement && data.image_url) {
+                        imgElement.src = data.image_url
+                    }
+                }
+            }
+
+            // Xử lý response - KHÔNG có HTML lồng nhau
+            let responseContent = data.response
+
+            // Format response đẹp hơn nếu có cả CV và RAG
+            if (data.cv_prediction && data.response.includes(data.cv_prediction)) {
+                // Tách CV prediction và RAG response
+                const ragOnly = data.response.replace(data.cv_prediction, '').trim()
+                responseContent = `${data.cv_prediction}\n\n${ragOnly}`
+            }
+
+            this.addMessageToUI(responseContent, null, "bot")
+            await this.loadConversations()
+        } else {
+            throw new Error(data.error || 'Failed to get response')
         }
-
-        this.addMessageToUI(responseContent, null, "bot")
-        await this.loadConversations()
-      } else {
-        throw new Error(data.error || 'Failed to get response')
-      }
     } catch (error) {
-      this.hideTypingIndicator()
-      const errorMsg = "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau."
-      this.addMessageToUI(errorMsg, null, "bot")
-      console.error("Chatbot error:", error)
+        this.hideTypingIndicator()
+        const errorMsg = "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau."
+        this.addMessageToUI(errorMsg, null, "bot")
+        console.error("Chatbot error:", error)
     }
-  }
+}
 
-  addMessageToUI(content, imageData, type) {
+// Sửa hàm addMessageToUI trong chatbot.js
+addMessageToUI(content, imageData, type, imageUrl = null) {
     const timestamp = new Date().toLocaleTimeString("vi-VN", {
-      hour: "2-digit",
-      minute: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
     })
 
     this.renderMessage({
-      content,
-      imageData,
-      type,
-      timestamp,
+        content,
+        imageData,
+        type,
+        timestamp,
+        image_url: imageUrl // Thêm image_url để hiển thị ảnh từ URL
     })
 
     this.scrollToBottom()
-  }
+}
+// Sửa hàm renderMessage để hiển thị ảnh ngay lập tức
 renderMessage(message) {
     if (!this.elements.chatMessages) return
 
@@ -482,10 +492,12 @@ renderMessage(message) {
     let messageHTML = ''
 
     if (message.type === "user") {
-        // Hiển thị ảnh từ URL nếu có
-        const imageDisplay = message.image_url ?
-            `<img src="${message.image_url}" class="chat-image-preview" alt="Hình ảnh đã tải lên" style="max-width: 200px; max-height: 200px; border-radius: 8px; margin-bottom: 8px;">` :
-            ''
+        // HIỂN THỊ ẢNH NGAY LẬP TỨC - cả base64 và URL
+        const imageDisplay = message.imageData ?
+            `<img src="${message.imageData}" class="chat-image-preview" alt="Hình ảnh đã tải lên" style="max-width: 200px; max-height: 200px; border-radius: 8px; margin-bottom: 8px;">` :
+            (message.image_url ?
+                `<img src="${message.image_url}" class="chat-image-preview" alt="Hình ảnh đã tải lên" style="max-width: 200px; max-height: 200px; border-radius: 8px; margin-bottom: 8px;">` :
+                '')
 
         messageHTML = `
             <div class="message-content">
@@ -498,8 +510,8 @@ renderMessage(message) {
             </div>
         `
     } else {
-        // Đối với bot message, nếu có HTML thì hiển thị trực tiếp, không format lại
-        const content = message.is_html ? message.content : this.formatMessageContent(message.content)
+        // Bot message - format plain text thành HTML đẹp
+        const content = this.formatMessageContent(message.content)
 
         messageHTML = `
             <div class="message-avatar">

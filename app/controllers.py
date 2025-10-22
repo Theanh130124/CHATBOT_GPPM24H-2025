@@ -405,18 +405,15 @@ def send_chat_message():
         if image_data:
             try:
                 image_bytes = base64.b64decode(image_data.split(',')[1])
-
-                # Upload lên cloudinary
                 upload_result = cloudinary.uploader.upload(
                     image_bytes,
                     folder="chat_images"
                 )
                 image_url = upload_result['secure_url']
-
             except Exception as e:
                 app.logger.error(f"Image upload error: {e}")
 
-        # Lưu tin nhắn người dùng
+        # Lưu tin nhắn người dùng với URL ảnh
         user_message = ChatMessage(
             conversation_id=conversation.conversation_id,
             user_id=current_user.user_id,
@@ -432,7 +429,6 @@ def send_chat_message():
         cv_prediction = None
         raw_disease_name = None
         confidence = None
-        cv_result_html = ""
 
         # Xử lý hình ảnh nếu có
         if image_data:
@@ -443,28 +439,10 @@ def send_chat_message():
                 disease_name, conf, raw_disease_name = cv_model.predict(image_bytes)
                 confidence = float(conf) if conf else 0.0
 
-                if disease_name and confidence > 0.5:
+                if disease_name and confidence > 0.2:
                     cv_prediction = f"Phân tích hình ảnh cho thấy dấu hiệu của: **{disease_name}** (độ tin cậy: {confidence:.1%})."
-                    cv_result_html = f"""
-                    <div class="cv-result">
-                        <div class="cv-prediction">
-                            <i class="fas fa-microscope me-2"></i>
-                            {cv_prediction}
-                            <div class="disease-confidence">Độ tin cậy: {(confidence * 100):.1f}%</div>
-                        </div>
-                    </div>
-                    """
                 else:
                     cv_prediction = "Không thể xác định rõ tình trạng da từ hình ảnh. Vui lòng thử lại với hình ảnh rõ hơn hoặc mô tả thêm triệu chứng."
-                    cv_result_html = f"""
-                    <div class="cv-result">
-                        <div class="cv-prediction">
-                            <i class="fas fa-microscope me-2"></i>
-                            {cv_prediction}
-                            {"<div class='disease-confidence'>Độ tin cậy: " + str(confidence * 100)[:4] + "%</div>" if confidence else ""}
-                        </div>
-                    </div>
-                    """
 
                 # Lưu hình ảnh và kết quả dự đoán vào database
                 try:
@@ -504,29 +482,35 @@ def send_chat_message():
             combined_query = f"{message_text}. {cv_prediction}" if message_text else cv_prediction
 
         # Lấy response từ RAG
+        rag_response_content = ""
         if combined_query.strip():
             try:
                 rag_response = rag_chatbot.get_rag_response(combined_query, conversation.conversation_id)
-
-                # Kết hợp CV result và RAG response thành HTML
-                if cv_result_html:
-                    response_text = f"{cv_result_html}<div class='rag-response'>{rag_response}</div>"
-                else:
-                    response_text = rag_response
-
+                rag_response_content = rag_response
             except Exception as e:
                 app.logger.error(f"RAG Error: {e}")
-                response_text = "Xin lỗi, có lỗi xảy ra khi xử lý yêu cầu của bạn. Vui lòng thử lại."
+                rag_response_content = "Xin lỗi, có lỗi xảy ra khi xử lý yêu cầu của bạn. Vui lòng thử lại."
         else:
-            response_text = "Xin hãy mô tả vấn đề hoặc gửi hình ảnh để tôi có thể tư vấn."
+            rag_response_content = "Xin hãy mô tả vấn đề hoặc gửi hình ảnh để tôi có thể tư vấn."
 
-        # Lưu tin nhắn bot với đánh dấu HTML
+        # Tạo response text cuối cùng - QUAN TRỌNG: không dùng HTML lồng nhau
+        if cv_prediction and rag_response_content:
+            # Có cả CV và RAG response
+            response_text = f"{cv_prediction}\n\n{rag_response_content}"
+        elif cv_prediction:
+            # Chỉ có CV
+            response_text = cv_prediction
+        else:
+            # Chỉ có RAG
+            response_text = rag_response_content
+
+        # Lưu tin nhắn bot KHÔNG đánh dấu HTML (vì đã xử lý plain text)
         bot_message = ChatMessage(
             conversation_id=conversation.conversation_id,
             user_id=current_user.user_id,
             content=response_text,
             message_type='bot',
-            is_html=True  # Đánh dấu nội dung có chứa HTML
+            is_html=False  # Để frontend tự format
         )
         db.session.add(bot_message)
 
@@ -537,10 +521,11 @@ def send_chat_message():
         return jsonify({
             'success': True,
             'conversation_id': conversation.conversation_id,
-            'response': response_text,
-            'cv_prediction': cv_prediction,
+            'response': response_text,  # Plain text, không HTML
+            'cv_prediction': cv_prediction,  # CV result riêng
             'disease_name': raw_disease_name,
-            'confidence': confidence
+            'confidence': confidence,
+            'image_url': image_url  # Trả về URL ảnh để frontend hiển thị ngay
         })
 
     except Exception as e:
@@ -550,6 +535,8 @@ def send_chat_message():
             'success': False,
             'error': 'Có lỗi xảy ra khi xử lý tin nhắn'
         }), 500
+
+
 
 @app.route('/api/chat/upload-image', methods=['POST'])
 @login_required

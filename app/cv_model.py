@@ -132,7 +132,7 @@ class SkinDiseaseModel:
 
             prediction = self.model.predict(processed_img)
             class_idx = np.argmax(prediction)
-            confidence = float(np.max(prediction))
+            confidence = float(np.max(prediction))  #Lấy max
 
             raw_class = self.raw_class_names[class_idx]
             friendly_name = self.friendly_class_names.get(raw_class, raw_class)
