@@ -6,7 +6,41 @@ from PIL import Image
 import io
 import os
 from app import app
+from tensorflow.keras.layers import InputLayer, Conv2D
+from tensorflow.keras.saving import register_keras_serializable
 
+# Vá InputLayer để xử lý batch_shape
+@register_keras_serializable()
+class PatchedInputLayer(InputLayer):
+    def __init__(self, **kwargs):
+        if 'batch_shape' in kwargs:
+            batch_shape = kwargs.pop('batch_shape')
+            kwargs['batch_size'] = batch_shape[0] if batch_shape else None
+            kwargs['input_shape'] = batch_shape[1:] if batch_shape else None
+        super().__init__(**kwargs)
+
+# Vá DTypePolicy để xử lý compute_dtype và variable_dtype
+@register_keras_serializable()
+class PatchedDTypePolicy:
+    def __init__(self, name='float32'):
+        self.name = name
+        self._compute_dtype = name
+        self._variable_dtype = name
+
+    @property
+    def compute_dtype(self):
+        return self._compute_dtype
+
+    @property
+    def variable_dtype(self):
+        return self._variable_dtype
+
+    def get_config(self):
+        return {'name': self.name}
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
 
 class SkinDiseaseModel:
     def __init__(self, model_path=None):
@@ -19,31 +53,25 @@ class SkinDiseaseModel:
 
         if not os.path.exists(model_path):
             print(f"Không tìm thấy file model tại: {model_path}")
-        else:
-            print("Tìm thấy model, đang load...")
+            self.model = None
+            return
+
+        print("Tìm thấy model, đang load...")
 
         try:
-            # Thử load model với các config đơn giản hơn
             self.model = tf.keras.models.load_model(
                 model_path,
-                compile=False
+                compile=False,
+                custom_objects={
+                    'InputLayer': PatchedInputLayer,
+                    'DTypePolicy': PatchedDTypePolicy
+                }
             )
             app.logger.info(f"Model load thành công từ: {model_path}")
         except Exception as e:
-            app.logger.error(f"Lỗi khi load model lần 1: {e}")
-            try:
-                # Thử load với safe_mode=True
-                self.model = tf.keras.models.load_model(
-                    model_path,
-                    compile=False,
-                    safe_mode=True
-                )
-                app.logger.info(f"Model load thành công với safe_mode: {model_path}")
-            except Exception as e2:
-                app.logger.error(f"Lỗi khi load model lần 2: {e2}")
-                self.model = None
-                return
-
+            app.logger.error(f"Lỗi khi load model: {e}")
+            self.model = None
+            return
 
         self.img_size = (224, 224)
 
@@ -90,7 +118,7 @@ class SkinDiseaseModel:
             return img_array
 
         except Exception as e:
-            app.logger.error(f" Lỗi xử lý ảnh: {e}")
+            app.logger.error(f"Lỗi xử lý ảnh: {e}")
             return None
 
     def predict(self, img_data):
@@ -112,10 +140,8 @@ class SkinDiseaseModel:
             return friendly_name, confidence, raw_class
 
         except Exception as e:
-            app.logger.error(f" Lỗi dự đoán: {e}")
+            app.logger.error(f"Lỗi dự đoán: {e}")
             return None, 0.0, None
-
-
 
 try:
     cv_model = SkinDiseaseModel()

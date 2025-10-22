@@ -133,6 +133,11 @@ class ChatMessage(BaseModel):
     message_type = db.Column(db.String(50), nullable=False)  # 'user' or 'bot'
     timestamp = db.Column(db.DateTime, default=datetime.now)
 
+    # Thêm các trường mới
+    has_image = db.Column(db.Boolean, default=False)
+    image_url = db.Column(db.String(500))  # URL ảnh từ cloudinary
+    is_html = db.Column(db.Boolean, default=False)  # Đánh dấu nội dung có chứa HTML
+
 
 class PostImage(db.Model):
     __tablename__ = 'post_image'

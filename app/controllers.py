@@ -240,7 +240,10 @@ def get_messages(conversation_id):
         'id': msg.message_id,
         'content': msg.content,
         'type': msg.message_type,
-        'timestamp': msg.timestamp.strftime('%d/%m/%Y %H:%M:%S')
+        'timestamp': msg.timestamp.strftime('%d/%m/%Y %H:%M:%S'),
+        'has_image': msg.has_image,
+        'image_url': msg.image_url,
+        'is_html': msg.is_html
     } for msg in messages])
 
 
@@ -362,7 +365,6 @@ def about():
 
 #---------- RAG - CNN -------------
 
-
 @app.route('/api/chat/send-message', methods=['POST'])
 @login_required
 def send_chat_message():
@@ -393,14 +395,35 @@ def send_chat_message():
                 title=title
             )
             db.session.add(conversation)
-            db.session.flush()  # Get the ID without committing
+            db.session.flush()
+
+        # Lưu thông tin ảnh nếu có
+        has_image = bool(image_data)
+        image_url = None
+
+        # Upload ảnh lên cloudinary nếu có
+        if image_data:
+            try:
+                image_bytes = base64.b64decode(image_data.split(',')[1])
+
+                # Upload lên cloudinary
+                upload_result = cloudinary.uploader.upload(
+                    image_bytes,
+                    folder="chat_images"
+                )
+                image_url = upload_result['secure_url']
+
+            except Exception as e:
+                app.logger.error(f"Image upload error: {e}")
 
         # Lưu tin nhắn người dùng
         user_message = ChatMessage(
             conversation_id=conversation.conversation_id,
             user_id=current_user.user_id,
             content=message_text,
-            message_type='user'
+            message_type='user',
+            has_image=has_image,
+            image_url=image_url
         )
         db.session.add(user_message)
         db.session.flush()
@@ -409,6 +432,7 @@ def send_chat_message():
         cv_prediction = None
         raw_disease_name = None
         confidence = None
+        cv_result_html = ""
 
         # Xử lý hình ảnh nếu có
         if image_data:
@@ -419,31 +443,47 @@ def send_chat_message():
                 disease_name, conf, raw_disease_name = cv_model.predict(image_bytes)
                 confidence = float(conf) if conf else 0.0
 
-                if disease_name and confidence > 0.5:  # Only show if confidence > 50%
+                if disease_name and confidence > 0.5:
                     cv_prediction = f"Phân tích hình ảnh cho thấy dấu hiệu của: **{disease_name}** (độ tin cậy: {confidence:.1%})."
+                    cv_result_html = f"""
+                    <div class="cv-result">
+                        <div class="cv-prediction">
+                            <i class="fas fa-microscope me-2"></i>
+                            {cv_prediction}
+                            <div class="disease-confidence">Độ tin cậy: {(confidence * 100):.1f}%</div>
+                        </div>
+                    </div>
+                    """
+                else:
+                    cv_prediction = "Không thể xác định rõ tình trạng da từ hình ảnh. Vui lòng thử lại với hình ảnh rõ hơn hoặc mô tả thêm triệu chứng."
+                    cv_result_html = f"""
+                    <div class="cv-result">
+                        <div class="cv-prediction">
+                            <i class="fas fa-microscope me-2"></i>
+                            {cv_prediction}
+                            {"<div class='disease-confidence'>Độ tin cậy: " + str(confidence * 100)[:4] + "%</div>" if confidence else ""}
+                        </div>
+                    </div>
+                    """
 
-                    # Lưu hình ảnh và kết quả dự đoán
-                    try:
-                        upload_result = cloudinary.uploader.upload(
-                            image_bytes,
-                            folder="skin_images"
-                        )
+                # Lưu hình ảnh và kết quả dự đoán vào database
+                try:
+                    symptom = Symptom(
+                        user_id=current_user.user_id,
+                        description_text=message_text if message_text else f"Phân tích hình ảnh da - {disease_name or 'Không xác định'}"
+                    )
+                    db.session.add(symptom)
+                    db.session.flush()
 
-                        symptom = Symptom(
-                            user_id=current_user.user_id,
-                            description_text=message_text if message_text else f"Phân tích hình ảnh da - {disease_name}"
-                        )
-                        db.session.add(symptom)
-                        db.session.flush()
+                    skin_image = SkinImage(
+                        user_id=current_user.user_id,
+                        symptom_id=symptom.symptom_id,
+                        image_path=image_url if image_url else "unknown"
+                    )
+                    db.session.add(skin_image)
+                    db.session.flush()
 
-                        skin_image = SkinImage(
-                            user_id=current_user.user_id,
-                            symptom_id=symptom.symptom_id,
-                            image_path=upload_result['secure_url']
-                        )
-                        db.session.add(skin_image)
-                        db.session.flush()
-
+                    if disease_name:
                         cv_pred = CVPrediction(
                             skinimage_id=skin_image.skinimage_id,
                             confidence=confidence,
@@ -451,10 +491,8 @@ def send_chat_message():
                         )
                         db.session.add(cv_pred)
 
-                    except Exception as e:
-                        app.logger.error(f"Error saving image data: {e}")
-                else:
-                    cv_prediction = "Không thể xác định rõ tình trạng da từ hình ảnh. Vui lòng thử lại với hình ảnh rõ hơn hoặc mô tả thêm triệu chứng."
+                except Exception as e:
+                    app.logger.error(f"Error saving image data: {e}")
 
             except Exception as e:
                 app.logger.error(f"Image processing error: {e}")
@@ -468,25 +506,32 @@ def send_chat_message():
         # Lấy response từ RAG
         if combined_query.strip():
             try:
-                response_text = rag_chatbot.get_rag_response(combined_query, conversation.conversation_id)
+                rag_response = rag_chatbot.get_rag_response(combined_query, conversation.conversation_id)
+
+                # Kết hợp CV result và RAG response thành HTML
+                if cv_result_html:
+                    response_text = f"{cv_result_html}<div class='rag-response'>{rag_response}</div>"
+                else:
+                    response_text = rag_response
+
             except Exception as e:
                 app.logger.error(f"RAG Error: {e}")
                 response_text = "Xin lỗi, có lỗi xảy ra khi xử lý yêu cầu của bạn. Vui lòng thử lại."
         else:
             response_text = "Xin hãy mô tả vấn đề hoặc gửi hình ảnh để tôi có thể tư vấn."
 
-        # Lưu tin nhắn bot
+        # Lưu tin nhắn bot với đánh dấu HTML
         bot_message = ChatMessage(
             conversation_id=conversation.conversation_id,
             user_id=current_user.user_id,
             content=response_text,
-            message_type='bot'
+            message_type='bot',
+            is_html=True  # Đánh dấu nội dung có chứa HTML
         )
         db.session.add(bot_message)
 
         # Cập nhật thời gian conversation
         conversation.updated_at = datetime.datetime.utcnow()
-
         db.session.commit()
 
         return jsonify({
@@ -505,7 +550,6 @@ def send_chat_message():
             'success': False,
             'error': 'Có lỗi xảy ra khi xử lý tin nhắn'
         }), 500
-
 
 @app.route('/api/chat/upload-image', methods=['POST'])
 @login_required

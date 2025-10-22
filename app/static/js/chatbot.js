@@ -313,7 +313,7 @@ async loadConversations() {
     }
   }
 
-  async loadConversation(conversationId) {
+async loadConversation(conversationId) {
     try {
         this.currentConversationId = conversationId
         const response = await fetch(`${this.apiBaseUrl}/conversations/${conversationId}/messages`)
@@ -324,17 +324,18 @@ async loadConversations() {
         if (this.elements.chatMessages) {
             this.elements.chatMessages.innerHTML = ""
 
-            // Display all messages
+            // Display all messages với đầy đủ thông tin
             messages.forEach((msg) => {
                 this.renderMessage({
                     content: msg.content,
                     type: msg.type,
                     timestamp: msg.timestamp,
+                    image_url: msg.image_url,
+                    is_html: msg.is_html
                 })
             })
 
             this.scrollToBottom()
-            // CHỈ cập nhật sidebar, không gọi lại loadConversations
             this.updateSidebarActiveState()
         }
     } catch (error) {
@@ -472,7 +473,6 @@ updateSidebarActiveState() {
 
     this.scrollToBottom()
   }
-
 renderMessage(message) {
     if (!this.elements.chatMessages) return
 
@@ -480,10 +480,16 @@ renderMessage(message) {
     messageElement.className = `message ${message.type}`
 
     let messageHTML = ''
+
     if (message.type === "user") {
+        // Hiển thị ảnh từ URL nếu có
+        const imageDisplay = message.image_url ?
+            `<img src="${message.image_url}" class="chat-image-preview" alt="Hình ảnh đã tải lên" style="max-width: 200px; max-height: 200px; border-radius: 8px; margin-bottom: 8px;">` :
+            ''
+
         messageHTML = `
             <div class="message-content">
-                ${message.imageData ? `<img src="${message.imageData}" class="chat-image-preview" alt="Hình ảnh đã tải lên" style="max-width: 200px; max-height: 200px; border-radius: 8px; margin-bottom: 8px;">` : ''}
+                ${imageDisplay}
                 ${message.content ? `<p>${this.formatMessageContent(message.content)}</p>` : ''}
                 <div class="message-time">${this.escapeHtml(message.timestamp)}</div>
             </div>
@@ -492,12 +498,15 @@ renderMessage(message) {
             </div>
         `
     } else {
+        // Đối với bot message, nếu có HTML thì hiển thị trực tiếp, không format lại
+        const content = message.is_html ? message.content : this.formatMessageContent(message.content)
+
         messageHTML = `
             <div class="message-avatar">
                 <i class="fas fa-robot"></i>
             </div>
             <div class="message-content">
-                ${this.formatMessageContent(message.content)}
+                ${content}
                 <div class="message-time">${this.escapeHtml(message.timestamp)}</div>
             </div>
         `
@@ -506,6 +515,7 @@ renderMessage(message) {
     messageElement.innerHTML = messageHTML
     this.elements.chatMessages.appendChild(messageElement)
 }
+
 
   formatMessageContent(content) {
     if (!content) return ''
