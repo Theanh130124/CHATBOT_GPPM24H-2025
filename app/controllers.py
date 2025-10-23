@@ -14,9 +14,9 @@ from app.cv_model import cv_model
 
 import google.oauth2.id_token
 import google.auth.transport.requests
-import requests
+import requests,os
 import cloudinary.uploader
-
+from dotenv import load_dotenv
 
 def _clean_html_tags(text):
     """Remove HTML tags from text"""
@@ -562,3 +562,83 @@ def upload_chat_image():
     except Exception as e:
         app.logger.error(f"Image upload error: {e}")
         return jsonify({'error': 'Upload failed'}), 500
+
+load_dotenv()
+GOOGLE_MAPS_KEY = os.getenv("GOOGLE_MAPS_KEY")
+PLACES_TEXT_URL = "https://places.googleapis.com/v1/places:searchText"
+
+# Header để gửi lên gg map những trường cần lấy
+def places_headers():
+    return {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": GOOGLE_MAPS_KEY,
+        "X-Goog-FieldMask": (
+            "places.id,places.displayName,places.formattedAddress,"
+            "places.location,places.rating,places.businessStatus,"
+            "places.internationalPhoneNumber,places.websiteUri"
+        ),
+    }
+
+#Chuẩn hóa jsson để gửi lên
+def simplify_places(resp_json):
+    out = []
+    for p in resp_json.get("places", []):
+        loc = p.get("location", {})
+        out.append({
+            "id": p.get("id"),
+            "name": p.get("displayName", {}).get("text", ""),
+            "address": p.get("formattedAddress", ""),
+            "lat": loc.get("latitude"),
+            "lng": loc.get("longitude"),
+            "rating": p.get("rating"),
+            "status": p.get("businessStatus"),
+            "phone": p.get("internationalPhoneNumber"),
+            "website": p.get("websiteUri"),
+        })
+    return out
+
+#API Search địa chỉ theo text, mặt định là bệnh viện da liễu
+@app.route("/api/places_text")
+def places_text():
+    q = request.args.get("q", "bệnh viện da liễu")#Fallback, nhớ fallback tới địa chỉ thật người dùng hoặc là thành phố lớn  như HCM
+    lat = request.args.get("lat", type=float)
+    lng = request.args.get("lng", type=float)
+    if not lat or not lng:
+        lat, lng = 10.364, 107.084  # fallback Vũng Tàu (hiện tại đang VT)
+
+    payload = {
+        "textQuery": q,
+        "languageCode": "vi",
+        "regionCode": "VN",
+        "maxResultCount": 20,
+        "locationBias": {
+            "circle": {
+                "center": {"latitude": lat, "longitude": lng},
+                "radius": 30000
+            }
+        }
+    }
+
+    r = requests.post(PLACES_TEXT_URL, headers=places_headers(), json=payload)
+    data = r.json()
+    return jsonify(simplify_places(data))
+
+#API
+@app.route("/api/place_detail/<place_id>")
+def place_detail(place_id):
+    url = f"https://places.googleapis.com/v1/places/{place_id}"
+    headers = {
+        "X-Goog-Api-Key": GOOGLE_MAPS_KEY,
+        "X-Goog-FieldMask": (
+            "id,displayName,photos,editorialSummary,regularOpeningHours,"
+            "rating,userRatingCount,formattedAddress,"
+            "internationalPhoneNumber,websiteUri"
+        )
+    }
+    r = requests.get(url, headers=headers)
+    return jsonify(r.json())
+
+#Page
+@app.route("/map")
+def map_page():
+    return render_template("map.html", maps_key=GOOGLE_MAPS_KEY)
