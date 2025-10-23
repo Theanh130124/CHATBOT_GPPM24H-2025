@@ -1,0 +1,180 @@
+{% extends "layout/base.html" %}
+{% block title %}Bệnh viện Da Liễu Gần Bạn{% endblock %}
+
+{% block content %}
+<style>
+#place-list .card {
+  transition: background-color 0.15s ease-in-out;
+}
+#place-list .card:hover {
+  background-color: #f7f9fb;
+}
+#place-list .card-body {
+  border-bottom: 1px solid #eee;
+}
+#place-list .card:last-child .card-body {
+  border-bottom: none;
+}
+</style>
+
+<div class="container-fluid py-3">
+  <div class="row g-3">
+    <div class="col-12">
+      <h4 class="fw-bold mb-3 text-primary">
+         Bệnh viện da liễu gần bạn
+      </h4>
+    </div>
+
+    <div class="col-md-4">
+      <div id="place-list" style="max-height:80vh; overflow-y:auto;"></div>
+    </div>
+
+    <div class="col-md-8">
+      <div id="map" style="height:80vh; border-radius:12px;"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://maps.googleapis.com/maps/api/js?key={{ maps_key }}"></script>
+<script>
+let map, markers = [], infoWindow;
+
+window.addEventListener("load", initMap);
+
+async function initMap() {
+  const center = { lat: 10.364, lng: 107.084 };
+  map = new google.maps.Map(document.getElementById("map"), {
+    center, zoom: 13, mapTypeControl: false, streetViewControl: false,
+  });
+  infoWindow = new google.maps.InfoWindow();
+  await loadPlaces();
+}
+
+async function loadPlaces() {
+  const q = "bệnh viện da liễu Vũng Tàu";
+  const res = await fetch(`/api/places_text?q=${encodeURIComponent(q)}`);
+  const data = await res.json();
+  renderList(data);
+  plotMarkers(data);
+}
+
+function renderList(data) {
+  const list = document.getElementById("place-list");
+  list.innerHTML = "";
+  if (!data.length) {
+    list.innerHTML = "<p class='text-muted'>Không tìm thấy cơ sở y tế.</p>";
+    return;
+  }
+
+  data.forEach((p, i) => {
+    const card = document.createElement("div");
+    card.className = "card mb-3 shadow-sm border-0";
+    card.style.cursor = "pointer";
+    card.onclick = () => openDetail(p.id, i);
+
+    // rating hiển thị
+    const rating = p.rating
+      ? `<span class="text-warning fw-bold"><img src="https://img.icons8.com/?size=100&id=19417&format=png&color=000000" style="vertical-align:middle; margin-right:4px;width:25px"> ${p.rating}</span>`
+      : `<span class="text-muted small">Chưa có đánh giá</span>`;
+
+    // 🕓 Trạng thái
+    let statusText = "";
+    if (p.status === "OPERATIONAL") {
+      statusText = `<span class="text-success small">Đang mở cửa</span>`;
+    } else if (p.status === "CLOSED_TEMPORARILY") {
+      statusText = `<span class="text-danger small">Tạm thời đóng cửa</span>`;
+    } else {
+      statusText = `<span class="text-danger small">Đã đóng cửa</span>`;
+    }
+
+    // Website + Chỉ đường
+    const websiteBtn = p.website
+      ? `<a href="${p.website}" target="_blank" class="text-primary small me-2 text-decoration-none"><img src="https://img.icons8.com/?size=100&id=68272&format=png&color=000000" style="vertical-align:middle; margin-right:4px;width:25px"> Trang web</a>`
+      : "";
+    const mapDir = `<a href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}" target="_blank" class="text-primary small text-decoration-none"><img src="https://img.icons8.com/?size=100&id=ii04BvoZiCsx&format=png&color=000000" style="vertical-align:middle; margin-right:4px;width:25px"> Chỉ đường</a>`;
+
+    card.innerHTML = `
+      <div class="card-body py-2">
+        <h6 class="fw-bold mb-1 text-primary">${p.name}</h6>
+        <div class="text-muted small mb-1">${p.address || ""}</div>
+        ${rating} &nbsp; ${statusText}<br>
+        ${p.phone ? `<span class="text-muted small"><img src="https://img.icons8.com/?size=100&id=43297&format=png&color=000000" style="vertical-align:middle; margin-right:4px;width:25px"> ${p.phone}</span><br>` : ""}
+        <div class="mt-1 d-flex flex-wrap gap-2">${websiteBtn}${mapDir}</div>
+      </div>
+    `;
+
+    list.appendChild(card);
+  });
+}
+
+function plotMarkers(data) {
+  markers.forEach(m => m.setMap(null));
+  markers = [];
+  const bounds = new google.maps.LatLngBounds();
+  data.forEach((p, i) => {
+    if (!p.lat || !p.lng) return;
+    const marker = new google.maps.Marker({
+      position: { lat: p.lat, lng: p.lng },
+      map, title: p.name,
+      icon: "https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png"
+    });
+    marker.placeId = p.id;
+    marker.data = p;
+    marker.addListener("click", () => openDetail(p.id, i));
+    markers.push(marker);
+    bounds.extend(marker.getPosition());
+  });
+  if (data.length) map.fitBounds(bounds);
+}
+
+// ---------- Fetch Detail + Show Popup ----------
+async function openDetail(placeId, i) {
+  try {
+    const res = await fetch(`/api/place_detail/${placeId}`);
+    const d = await res.json();
+    const photos = d.photos?.slice(0, 5) || [];
+
+    // Build carousel with multiple images
+    let photoHTML = "";
+    if (photos.length > 0) {
+      photoHTML = `
+        <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;">
+          ${photos.map(p => {
+            const u = `https://places.googleapis.com/v1/${p.name}/media?maxWidthPx=160&key={{ maps_key }}`;
+            return `<img src="${u}" style="width:160px;height:110px;object-fit:cover;border-radius:8px;">`;
+          }).join("")}
+        </div>
+      `;
+    } else {
+      photoHTML = `<img src="https://via.placeholder.com/400x250?text=No+Image" style="width:100%;border-radius:8px;margin-bottom:6px;">`;
+    }
+
+    // Info buttons
+    const dirLink = `https://www.google.com/maps/dir/?api=1&destination=${markers[i].position.lat()},${markers[i].position.lng()}`;
+    const callLink = d.internationalPhoneNumber ? `tel:${d.internationalPhoneNumber.replace(/\s+/g, "")}` : null;
+
+    const html = `
+      <div style="max-width:300px;font-size:13px">
+        ${photoHTML}
+        <b style="font-size:14px;">${d.displayName?.text || "Không rõ tên"}</b><br>
+        ${d.formattedAddress || ""}<br>
+        ${d.rating ? `<img src="https://img.icons8.com/?size=100&id=19417&format=png&color=000000" style="vertical-align:middle; margin-right:4px;width:25px"> ${d.rating} (${d.userRatingCount || 0} đánh giá)<br>` : ""}
+        ${d.editorialSummary?.text || ""}<br>
+        <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:8px;">
+          ${d.websiteUri ? `<a href="${d.websiteUri}" target="_blank" style="text-decoration:none;"><img src="https://img.icons8.com/?size=100&id=68272&format=png&color=000000" style="vertical-align:middle; margin-right:4px;width:25px"> Trang web</a>` : ""}
+          <a href="${dirLink}" target="_blank" style="text-decoration:none;"><img src="https://img.icons8.com/?size=100&id=ii04BvoZiCsx&format=png&color=000000" style="vertical-align:middle; margin-right:4px;width:25px"> Chỉ đường</a>
+          ${callLink ? `<a href="${callLink}" style="text-decoration:none;"><img src="https://img.icons8.com/?size=100&id=43297&format=png&color=000000" style="vertical-align:middle; margin-right:4px;width:25px"> Gọi</a>` : ""}
+        </div>
+      </div>
+    `;
+    // Zoom bản đồ tới vị trí được chọn
+map.panTo(markers[i].getPosition());
+map.setZoom(16);
+    infoWindow.setContent(html);
+    infoWindow.open(map, markers[i]);
+  } catch (e) {
+    console.error("Lỗi khi tải chi tiết:", e);
+  }
+}
+</script>
+{% endblock %}
