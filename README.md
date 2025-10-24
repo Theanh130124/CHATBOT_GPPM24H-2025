@@ -168,3 +168,8 @@ The project was executed by the **STACKLIFO TEAM**:
 | Trần Thế Anh   | AI Engineer |
 | Nguyễn Văn Bảo | Developer   |
 | Võ Duy Khang   | Developer   |
+
+Report link  ---> <a href="https://www.canva.com/design/DAG2gWPjMQc/uyVuAkuW2Ub2_-nl3FJDdw/edit"> PRESS ME</a>
+
+
+
