@@ -604,7 +604,7 @@ def places_text():
     lat = request.args.get("lat", type=float)
     lng = request.args.get("lng", type=float)
     if not lat or not lng:
-        lat, lng = 10.364, 107.084  # fallback Vũng Tàu (hiện tại đang VT)
+        lat, lng = 10.7769, 106.7009  # fallback Hồ Chí Minh cho tiện test thi
 
     payload = {
         "textQuery": q,

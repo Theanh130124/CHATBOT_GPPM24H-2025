@@ -35,6 +35,7 @@
   </div>
 </div>
 
+//Gọi Map JS API
 <script src="https://maps.googleapis.com/maps/api/js?key={{ maps_key }}"></script>
 <script>
 let map, markers = [], infoWindow;
@@ -42,17 +43,46 @@ let map, markers = [], infoWindow;
 window.addEventListener("load", initMap);
 
 async function initMap() {
-  const center = { lat: 10.364, lng: 107.084 };
+  // Mặc định fallback là Hồ Chí Minh cho tiện, vì là tp lớn
+  const fallback = { lat: 10.7769, lng: 106.7009 };
+
+  // Khởi tạo bản đồ tạm thời (đợi lấy vị trí người dùng) (Khi người dùng chưa truy cập thì về HCM)
   map = new google.maps.Map(document.getElementById("map"), {
-    center, zoom: 13, mapTypeControl: false, streetViewControl: false,
+    center: fallback, zoom: 13, mapTypeControl: false, streetViewControl: false,
   });
   infoWindow = new google.maps.InfoWindow();
-  await loadPlaces();
+
+  //Thử lấy vị trí thật của người dùng
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const userPos = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        };
+        map.setCenter(userPos);
+        new google.maps.Marker({
+          position: userPos,
+          map,
+          icon: "https://maps.gstatic.com/mapfiles/ms2/micons/blue-dot.png",
+          title: "Vị trí của bạn",
+        });
+        await loadPlaces(userPos.lat, userPos.lng);
+      },
+      async (err) => {
+        console.warn("Không thể lấy vị trí người dùng:", err.message);
+        await loadPlaces(fallback.lat, fallback.lng);
+      }
+    );
+  } else {
+    await loadPlaces(fallback.lat, fallback.lng);
+  }
 }
 
-async function loadPlaces() {
-  const q = "bệnh viện da liễu Vũng Tàu";
-  const res = await fetch(`/api/places_text?q=${encodeURIComponent(q)}`);
+async function loadPlaces(lat, lng) {
+  const q = "bệnh viện da liễu";
+  const url = `/api/places_text?q=${encodeURIComponent(q)}&lat=${lat}&lng=${lng}`;
+  const res = await fetch(url);
   const data = await res.json();
   renderList(data);
   plotMarkers(data);
