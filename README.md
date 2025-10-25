@@ -169,6 +169,29 @@ The project was executed by the **STACKLIFO TEAM**:
 | Nguyễn Văn Bảo | Developer   |
 | Võ Duy Khang   | Developer   |
 
+
+## 5. PRODUCT IMAGES
+
+1.  **LOGIN AND REGISTER:**
+
+    <img width="1900" height="907" alt="image" src="https://github.com/user-attachments/assets/d2520abc-0da8-40b2-9706-8a6efa0ab61d" />
+
+    <img width="1875" height="915" alt="image" src="https://github.com/user-attachments/assets/72610c18-a8fe-42e3-b7ab-b5166c3cdda0" />
+
+2.  **HOME PAGE:**
+    <img width="1890" height="917" alt="image" src="https://github.com/user-attachments/assets/e601b38b-6d8a-4e13-a084-c566e9935a18" />
+    <img width="1886" height="919" alt="image" src="https://github.com/user-attachments/assets/2fbc55fc-c076-42c1-a97f-7cb647daeb4a" />
+    <img width="1887" height="920" alt="image" src="https://github.com/user-attachments/assets/0ec66986-5b8f-4598-90db-3dfeb3fd66e7" />
+
+
+
+4.  **CHAT BOT:**
+   <img width="1887" height="920" alt="image" src="https://github.com/user-attachments/assets/3306b440-10c0-4b21-b4c3-e10d83266e97" />
+   
+5.  **GG MAP:**
+   <img width="1891" height="912" alt="image" src="https://github.com/user-attachments/assets/c8f350c5-f0c4-46dd-86c8-480fe7980f89" />
+
+
 Report link  ---> <a href="https://www.canva.com/design/DAG2gWPjMQc/uyVuAkuW2Ub2_-nl3FJDdw/edit"> PRESS ME</a>
 
 
